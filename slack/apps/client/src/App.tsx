@@ -1,8 +1,19 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { io } from 'socket.io-client'
-import { AppBar, Avatar, Box, Button, IconButton, Paper, Toolbar, Typography } from '@mui/material'
+import {
+  AppBar,
+  Avatar,
+  Box,
+  IconButton,
+  ListItemText,
+  MenuItem,
+  MenuList,
+  Paper,
+  Toolbar,
+  Typography,
+} from '@mui/material'
 import Grid from '@mui/material/Unstable_Grid2'
-import { Namespace } from 'shared'
+import { Namespace, Room } from 'shared'
 
 export const socket = io('http://localhost:3000', {
   autoConnect: false,
@@ -11,6 +22,8 @@ export const socket = io('http://localhost:3000', {
 export const App = () => {
   const [isConnected, setIsConnected] = useState(false)
   const [namespaces, setNamespaces] = useState<Namespace[]>([])
+  const [selectedNamespace, setSelectedNamespace] = useState<null | Namespace>(null)
+  const [selectedRoom, setSelectedRoom] = useState<null | Room>(null)
 
   useEffect(() => {
     socket.connect()
@@ -25,6 +38,8 @@ export const App = () => {
 
     const handleListNamespaces = (data: Namespace[]) => {
       setNamespaces(data)
+      setSelectedNamespace(data[0])
+      setSelectedRoom(data[0].rooms[0])
     }
 
     socket.on('connect', handleConnect)
@@ -51,23 +66,48 @@ export const App = () => {
       </AppBar>
       <Grid container padding={1} spacing={2} disableEqualOverflow>
         <Grid xs={1}>
-          <Paper
-            sx={{
-              display: 'flex',
-              flexFlow: 'column',
-              justifyContent: 'center',
-              alignItems: 'center',
-              padding: 1,
-              gap: 1,
-            }}
-          >
-            {namespaces.map((namespace) => {
-              return <Avatar key={namespace.name} src={namespace.imageSrc} />
-            })}
+          <Paper>
+            <MenuList>
+              {namespaces.map((namespace) => {
+                return (
+                  <MenuItem
+                    selected={selectedNamespace !== null && namespace.id === selectedNamespace.id}
+                    key={namespace.name}
+                    onClick={() => {
+                      setSelectedNamespace(namespace)
+                      setSelectedRoom(namespace.rooms[0])
+                    }}
+                  >
+                    <Avatar src={namespace.imageSrc} />
+                  </MenuItem>
+                )
+              })}
+            </MenuList>
           </Paper>
         </Grid>
-        <Grid xs={11}>
-          <Paper>11</Paper>
+        <Grid xs={2}>
+          <Paper>
+            <MenuList>
+              {selectedNamespace === null
+                ? 'no namespace'
+                : selectedNamespace.rooms.map((room) => {
+                  return (
+                    <MenuItem
+                      key={room.id}
+                      selected={selectedRoom !== null && selectedRoom.id === room.id}
+                      onClick={() => {
+                        setSelectedRoom(room)
+                      }}
+                    >
+                      <ListItemText>{room.title}</ListItemText>
+                    </MenuItem>
+                  )
+                })}
+            </MenuList>
+          </Paper>
+        </Grid>
+        <Grid xs={9}>
+          <Paper>rest</Paper>
         </Grid>
       </Grid>
     </Box>

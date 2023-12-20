@@ -5,18 +5,63 @@ import { Namespace } from 'shared'
 const namespaces: Namespace[] = [
   {
     name: 'roads',
+    endpoint: '/roads',
+    id: '29989651-60a4-4463-bcf1-689ba3c65f0f',
     imageSrc:
       'https://fastly.picsum.photos/id/549/200/200.jpg?hmac=8HshVdK-H52hgb-zHj3AefpzafjOnwnqSPzsd0oFoDQ',
+    rooms: [
+      {
+        id: 'f73897e4-480f-4690-a43a-423c4bec90d8',
+        title: 'poland',
+        history: [],
+        isPrivate: false,
+        namespaceId: '29989651-60a4-4463-bcf1-689ba3c65f0f',
+      },
+      {
+        id: '363048de-973b-4c5a-915b-266e9bd72580',
+        title: 'germany',
+        history: [],
+        isPrivate: false,
+        namespaceId: '29989651-60a4-4463-bcf1-689ba3c65f0f',
+      },
+      {
+        id: 'add6d4f1-dab7-4f00-9b22-e16b64a76190',
+        title: 'france',
+        history: [],
+        isPrivate: false,
+        namespaceId: '29989651-60a4-4463-bcf1-689ba3c65f0f',
+      },
+    ],
   },
   {
+    endpoint: '/cities',
+    id: 'aac0c753-a936-4c98-928c-7c941902556e',
     name: 'cities',
     imageSrc:
       'https://fastly.picsum.photos/id/122/200/200.jpg?hmac=AO77fWXJ61xiBlRhsCVFnWdzhJoxbrUP8288wd3Wdmg',
-  },
-  {
-    name: 'dogs',
-    imageSrc:
-      'https://fastly.picsum.photos/id/1062/200/200.jpg?hmac=F_trr44XLYeth1u5FIqJIgtD4pR7WOlzKZ2xrQ3tzww',
+    rooms: [
+      {
+        id: '473aeae0-1e04-4239-a08f-734de2e335dc',
+        title: 'warsaw',
+        history: [],
+        isPrivate: false,
+        namespaceId: 'aac0c753-a936-4c98-928c-7c941902556e',
+      },
+      {
+        id: '7aa47504-f162-4290-8c3d-40df914c93be',
+        title: 'cracow',
+        history: [],
+        isPrivate: false,
+        namespaceId: 'aac0c753-a936-4c98-928c-7c941902556e',
+      },
+      {
+        id: 'ca9e4de6-e30e-4913-b2aa-799331b75928',
+        title: 'gdansk',
+        history: [],
+        isPrivate: false,
+        namespaceId: 'aac0c753-a936-4c98-928c-7c941902556e',
+      },
+    ],
   },
 ]
 
@@ -36,7 +81,7 @@ fastify.get('/ping', () => {
 })
 
 fastify.get('/health', async (request, reply) => {
-  reply.send({ status: 'ok' })
+  reply.send({ status: 'ehh' })
 })
 
 fastify.ready().then(() => {
