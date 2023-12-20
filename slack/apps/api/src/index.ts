@@ -1,10 +1,6 @@
 import Fastify from 'fastify'
 import fastifySocketIO from 'fastify-socket.io'
-
-export type Namespace = {
-  name: string
-  imageSrc: string
-}
+import { Namespace } from 'shared'
 
 const namespaces: Namespace[] = [
   {

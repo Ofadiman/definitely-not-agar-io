@@ -2,11 +2,7 @@ import { useEffect, useState } from 'react'
 import { io } from 'socket.io-client'
 import { AppBar, Avatar, Box, Button, IconButton, Paper, Toolbar, Typography } from '@mui/material'
 import Grid from '@mui/material/Unstable_Grid2'
-
-type Namespace = {
-  imageSrc: string
-  name: string
-}
+import { Namespace } from 'shared'
 
 export const socket = io('http://localhost:3000', {
   autoConnect: false,

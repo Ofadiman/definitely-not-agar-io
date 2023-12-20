@@ -1,6 +1,6 @@
 import 'fastify'
 import { Server } from 'socket.io'
-import { Namespace } from '.'
+import { Namespace } from 'shared'
 
 declare module 'fastify' {
   interface FastifyInstance {
