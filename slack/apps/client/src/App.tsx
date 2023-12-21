@@ -109,8 +109,8 @@ export const App = () => {
   }, [])
 
   return (
-    <Box>
-      <AppBar position="static">
+    <>
+      <AppBar position="static" elevation={0}>
         <Toolbar variant="dense">
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             Socket status: {isConnected ? 'connected' : 'disconnected'}
@@ -123,65 +123,62 @@ export const App = () => {
           </Typography>
         </Toolbar>
       </AppBar>
-      <Grid container padding={1} spacing={2} disableEqualOverflow>
-        <Grid xs={1}>
-          <Paper>
-            <MenuList>
-              {namespaces.map((namespace) => {
+      <Grid sx={{ flexGrow: 1 }} container disableEqualOverflow>
+        <Grid xs="auto" sx={(theme) => ({ borderRight: 1, borderColor: theme.palette.divider })}>
+          <MenuList sx={{ flexGrow: 1 }}>
+            {namespaces.map((namespace) => {
+              return (
+                <MenuItem
+                  sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+                  selected={selectedNamespace !== null && namespace.id === selectedNamespace.id}
+                  key={namespace.name}
+                  onClick={() => {
+                    setSelectedNamespace(namespace)
+                    setSelectedRoom(namespace.rooms[0])
+                  }}
+                >
+                  <Avatar src={namespace.imageSrc} />
+                </MenuItem>
+              )
+            })}
+          </MenuList>
+        </Grid>
+        <Grid xs={'auto'} sx={(theme) => ({ borderRight: 1, borderColor: theme.palette.divider })}>
+          <MenuList>
+            {selectedNamespace === null
+              ? 'no namespace'
+              : selectedNamespace.rooms.map((room) => {
                 return (
                   <MenuItem
-                    selected={selectedNamespace !== null && namespace.id === selectedNamespace.id}
-                    key={namespace.name}
-                    onClick={() => {
-                      setSelectedNamespace(namespace)
-                      setSelectedRoom(namespace.rooms[0])
+                    key={room.id}
+                    selected={selectedRoom !== null && selectedRoom.id === room.id}
+                    onClick={async () => {
+                      setSelectedRoom(room)
+                      if (selectedNamespace) {
+                        const socket = sockets.get(selectedNamespace.id)
+                        if (socket) {
+                          const response = await socket.emitWithAck('rooms:join', room.id)
+
+                          setSocketsInRoomCount(response.socketsCount)
+                          console.log('data after rooms:join', response)
+                        } else {
+                          console.error(
+                            `there is no socket for namespace with id ${selectedNamespace.id}`,
+                          )
+                        }
+                      }
                     }}
                   >
-                    <Avatar src={namespace.imageSrc} />
+                    <ListItemText>{room.title}</ListItemText>
                   </MenuItem>
                 )
               })}
-            </MenuList>
-          </Paper>
+          </MenuList>
         </Grid>
-        <Grid xs={2}>
-          <Paper>
-            <MenuList>
-              {selectedNamespace === null
-                ? 'no namespace'
-                : selectedNamespace.rooms.map((room) => {
-                  return (
-                    <MenuItem
-                      key={room.id}
-                      selected={selectedRoom !== null && selectedRoom.id === room.id}
-                      onClick={async () => {
-                        setSelectedRoom(room)
-                        if (selectedNamespace) {
-                          const socket = sockets.get(selectedNamespace.id)
-                          if (socket) {
-                            const response = await socket.emitWithAck('rooms:join', room.id)
-
-                            setSocketsInRoomCount(response.socketsCount)
-                            console.log('data after rooms:join', response)
-                          } else {
-                            console.error(
-                              `there is no socket for namespace with id ${selectedNamespace.id}`,
-                            )
-                          }
-                        }
-                      }}
-                    >
-                      <ListItemText>{room.title}</ListItemText>
-                    </MenuItem>
-                  )
-                })}
-            </MenuList>
-          </Paper>
-        </Grid>
-        <Grid xs={9}>
-          <Paper>rest</Paper>
+        <Grid xs sx={{ padding: 2 }}>
+          todo
         </Grid>
       </Grid>
-    </Box>
+    </>
   )
 }
