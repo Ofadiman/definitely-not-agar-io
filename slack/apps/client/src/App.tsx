@@ -26,6 +26,7 @@ export const App = () => {
   const [namespaces, setNamespaces] = useState<Namespace[]>([])
   const [selectedNamespace, setSelectedNamespace] = useState<null | Namespace>(null)
   const [selectedRoom, setSelectedRoom] = useState<null | Room>(null)
+  const [socketsInRoomCount, setSocketsInRoomCount] = useState(0)
 
   useEffect(() => {
     const handleConnect = () => {
@@ -110,6 +111,12 @@ export const App = () => {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             Socket status: {isConnected ? 'connected' : 'disconnected'}
           </Typography>
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            Selected room: {selectedRoom?.title}
+          </Typography>
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            Active users: {socketsInRoomCount}
+          </Typography>
         </Toolbar>
       </AppBar>
       <Grid container padding={1} spacing={2} disableEqualOverflow>
@@ -148,7 +155,14 @@ export const App = () => {
                         if (selectedNamespace) {
                           const socket = sockets.get(selectedNamespace.id)
                           if (socket) {
-                            socket.emit('rooms:join', room.id)
+                            socket.emit(
+                              'rooms:join',
+                              room.id,
+                              (data: { socketsCount: number }) => {
+                                setSocketsInRoomCount(data.socketsCount)
+                                console.log('data after rooms:join', data)
+                              },
+                            )
                           } else {
                             console.error(
                               `there is no socket for namespace with id ${selectedNamespace.id}`,

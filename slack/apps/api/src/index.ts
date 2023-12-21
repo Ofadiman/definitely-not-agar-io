@@ -116,9 +116,13 @@ fastify.ready().then(() => {
     fastify.io.of(namespace.endpoint).on('connection', (socket: Socket) => {
       fastify.log.info(`socket with id: ${socket.id} connected`)
 
-      socket.on('rooms:join', (roomId) => {
+      socket.on('rooms:join', async (roomId, callback) => {
         fastify.log.info({ roomId }, `rooms:join`)
         socket.join(roomId)
+        const socketsCount = await fastify.io.of(namespace.endpoint).in(roomId).fetchSockets()
+        callback({
+          socketsCount: socketsCount.length,
+        })
       })
     })
   })
