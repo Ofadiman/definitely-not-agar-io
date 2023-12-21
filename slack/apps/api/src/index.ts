@@ -2,6 +2,7 @@ import Fastify from 'fastify'
 import fastifySocketIO from 'fastify-socket.io'
 import { Namespace } from 'shared'
 import { faker } from '@faker-js/faker'
+import { Socket } from 'socket.io'
 
 const namespaces: Namespace[] = [
   {
@@ -112,8 +113,13 @@ fastify.ready().then(() => {
   })
 
   namespaces.forEach((namespace) => {
-    fastify.io.of(namespace.endpoint).on('connection', (socket) => {
-      fastify.log.info(`socket with id connected: ${socket.id}`)
+    fastify.io.of(namespace.endpoint).on('connection', (socket: Socket) => {
+      fastify.log.info(`socket with id: ${socket.id} connected`)
+
+      socket.on('rooms:join', (roomId) => {
+        fastify.log.info({ roomId }, `rooms:join`)
+        socket.join(roomId)
+      })
     })
   })
 })

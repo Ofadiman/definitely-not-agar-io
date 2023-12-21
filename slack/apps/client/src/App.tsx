@@ -145,6 +145,16 @@ export const App = () => {
                       selected={selectedRoom !== null && selectedRoom.id === room.id}
                       onClick={() => {
                         setSelectedRoom(room)
+                        if (selectedNamespace) {
+                          const socket = sockets.get(selectedNamespace.id)
+                          if (socket) {
+                            socket.emit('rooms:join', room.id)
+                          } else {
+                            console.error(
+                              `there is no socket for namespace with id ${selectedNamespace.id}`,
+                            )
+                          }
+                        }
                       }}
                     >
                       <ListItemText>{room.title}</ListItemText>
