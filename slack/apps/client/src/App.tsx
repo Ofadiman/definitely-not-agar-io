@@ -125,6 +125,7 @@ export const App = () => {
                     selected={selectedRoomId !== null && selectedRoomId === room.id}
                     onClick={async () => {
                       setSelectedRoomId(room.id)
+                      setMessages([])
 
                       if (selectedNamespaceId) {
                         const socket = sockets.get(selectedNamespaceId)
