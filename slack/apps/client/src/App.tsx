@@ -80,6 +80,11 @@ export const App = () => {
         })
 
         socket.on('connect', () => {
+          socket.emit('rooms:join', namespaces[0].rooms[0].id, (data: { socketsCount: number }) => {
+            setSocketsInRoomCount(data.socketsCount)
+            console.log('data after rooms:join', data)
+          })
+
           console.log('socket connected to namespace', namespace)
         })
 
