@@ -79,11 +79,10 @@ export const App = () => {
           console.log(`namespace:changed`, updatedNamespace)
         })
 
-        socket.on('connect', () => {
-          socket.emit('rooms:join', namespaces[0].rooms[0].id, (data: { socketsCount: number }) => {
-            setSocketsInRoomCount(data.socketsCount)
-            console.log('data after rooms:join', data)
-          })
+        socket.on('connect', async () => {
+          const response = await socket.emitWithAck('rooms:join', namespaces[0].rooms[0].id)
+
+          setSocketsInRoomCount(response.socketsCount)
 
           console.log('socket connected to namespace', namespace)
         })
@@ -155,19 +154,15 @@ export const App = () => {
                     <MenuItem
                       key={room.id}
                       selected={selectedRoom !== null && selectedRoom.id === room.id}
-                      onClick={() => {
+                      onClick={async () => {
                         setSelectedRoom(room)
                         if (selectedNamespace) {
                           const socket = sockets.get(selectedNamespace.id)
                           if (socket) {
-                            socket.emit(
-                              'rooms:join',
-                              room.id,
-                              (data: { socketsCount: number }) => {
-                                setSocketsInRoomCount(data.socketsCount)
-                                console.log('data after rooms:join', data)
-                              },
-                            )
+                            const response = await socket.emitWithAck('rooms:join', room.id)
+
+                            setSocketsInRoomCount(response.socketsCount)
+                            console.log('data after rooms:join', response)
                           } else {
                             console.error(
                               `there is no socket for namespace with id ${selectedNamespace.id}`,
