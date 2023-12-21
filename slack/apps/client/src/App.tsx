@@ -4,7 +4,6 @@ import {
   AppBar,
   Avatar,
   Box,
-  IconButton,
   ListItemText,
   MenuItem,
   MenuList,
@@ -14,10 +13,13 @@ import {
 } from '@mui/material'
 import Grid from '@mui/material/Unstable_Grid2'
 import { Namespace, Room } from 'shared'
+import { Socket } from 'socket.io-client'
 
 export const socket = io('http://localhost:3000', {
   autoConnect: false,
 })
+
+const sockets = new Map<string, Socket>()
 
 export const App = () => {
   const [isConnected, setIsConnected] = useState(false)
@@ -26,8 +28,6 @@ export const App = () => {
   const [selectedRoom, setSelectedRoom] = useState<null | Room>(null)
 
   useEffect(() => {
-    socket.connect()
-
     const handleConnect = () => {
       setIsConnected(true)
     }
@@ -36,15 +36,63 @@ export const App = () => {
       setIsConnected(false)
     }
 
-    const handleListNamespaces = (data: Namespace[]) => {
-      setNamespaces(data)
-      setSelectedNamespace(data[0])
-      setSelectedRoom(data[0].rooms[0])
+    const handleListNamespaces = (namespaces: Namespace[]) => {
+      setNamespaces(namespaces)
+      setSelectedNamespace(namespaces[0])
+      setSelectedRoom(namespaces[0].rooms[0])
+
+      namespaces.forEach((namespace) => {
+        const existingSocket = sockets.get(namespace.id)
+        if (existingSocket) {
+          return
+        }
+
+        const socket = io(`http://localhost:3000${namespace.endpoint}`, {
+          autoConnect: false,
+        })
+
+        socket.on('namespace:changed', (updatedNamespace) => {
+          setNamespaces((prevNamespaces) => {
+            console.log('prevNamespaces', prevNamespaces)
+            const newNamespaces = prevNamespaces.map((prevNamespace) => {
+              if (prevNamespace.id === updatedNamespace.id) {
+                return updatedNamespace
+              }
+              return prevNamespace
+            })
+
+            console.log('newNamespaces', newNamespaces)
+
+            return newNamespaces
+          })
+
+          setSelectedNamespace((prevSelectedNamespace) => {
+            if (
+              prevSelectedNamespace !== null &&
+              prevSelectedNamespace.id === updatedNamespace.id
+            ) {
+              return updatedNamespace
+            }
+            return prevSelectedNamespace
+          })
+          console.log(`namespace:changed`, updatedNamespace)
+        })
+
+        socket.on('connect', () => {
+          console.log('socket connected to namespace', namespace)
+        })
+
+        sockets.set(namespace.id, socket)
+
+        socket.connect()
+      })
     }
 
     socket.on('connect', handleConnect)
     socket.on('disconnect', handleDisconnect)
     socket.on('list_namespaces', handleListNamespaces)
+
+    socket.connect()
 
     return () => {
       socket.off('connect', handleConnect)

@@ -7,6 +7,7 @@ declare module 'fastify' {
     io: Server<{
       pong: () => void
       list_namespaces: (namespaces: Namespace[]) => void
+      'namespace:changed': (namespaces: Namespace) => void
     }>
   }
 }

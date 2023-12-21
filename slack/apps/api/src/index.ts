@@ -1,6 +1,7 @@
 import Fastify from 'fastify'
 import fastifySocketIO from 'fastify-socket.io'
 import { Namespace } from 'shared'
+import { faker } from '@faker-js/faker'
 
 const namespaces: Namespace[] = [
   {
@@ -80,17 +81,42 @@ fastify.get('/ping', () => {
   fastify.io.emit('pong')
 })
 
-fastify.get('/health', async (request, reply) => {
-  reply.send({ status: 'ehh' })
+fastify.get('/health', async (_, reply) => {
+  reply.send({ status: 'ok' })
+})
+
+fastify.get('/namespaces/:namespaceId', (request, reply) => {
+  const namespace = namespaces.find(
+    (namespace) => namespace.id === (request.params as any).namespaceId,
+  )
+
+  if (namespace) {
+    namespace.rooms.push({
+      id: faker.string.uuid(),
+      namespaceId: namespace.id,
+      title: faker.word.noun(),
+      history: [],
+      isPrivate: false,
+    })
+
+    fastify.io.of(namespace.endpoint).emit('namespace:changed', namespace)
+    reply.send()
+  } else {
+    throw new Error(`namespace not found`)
+  }
 })
 
 fastify.ready().then(() => {
-  fastify.io.on('connection', (socket) => {
+  fastify.io.of('/').on('connection', (socket) => {
     socket.emit('list_namespaces', namespaces)
+  })
+
+  namespaces.forEach((namespace) => {
+    fastify.io.of(namespace.endpoint).on('connection', (socket) => {
+      fastify.log.info(`socket with id connected: ${socket.id}`)
+    })
   })
 })
 
 const PORT = 3000
-fastify.listen({ port: PORT }).then(() => {
-  fastify.log.info(`fastify is listening on port ${PORT}`)
-})
+void fastify.listen({ port: PORT })
