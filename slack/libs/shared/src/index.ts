@@ -1,15 +1,30 @@
 export type Namespace = {
   imageSrc: string
   name: string
-  endpoint: string
   id: string
-  rooms: Room[]
 }
 
 export type Room = {
   id: string
-  title: string
+  name: string
   namespaceId: string
-  isPrivate: boolean
-  history: unknown[]
+}
+
+export type Message = {
+  id: string
+  content: string
+  sender: string
+  roomId: string
+}
+
+export type ClientToServerEvents = {
+  'rooms:join': (roomIds: string[]) => void
+  'messages:sent': (message: Message) => void
+}
+
+export type ServerToClientEvents = {}
+
+export const EVENTS = {
+  ROOMS_JOIN: 'rooms:join',
+  MESSAGES_SENT: 'messages:sent',
 }
