@@ -152,7 +152,10 @@ export const App = () => {
           <Grid sx={{ flexGrow: 1, marginBottom: 2, overflowY: 'auto' }}>
             {messages.map((message) => {
               return (
-                <Typography key={message.id}>
+                <Typography
+                  key={message.id}
+                  textAlign={message.sender === username ? 'left' : 'right'}
+                >
                   {message.sender}: {message.content}
                 </Typography>
               )
