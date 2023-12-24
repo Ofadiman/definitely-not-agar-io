@@ -1,11 +1,11 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { useRef } from 'react'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
-  return <h1 className="text-3xl font-bold underline">Hello world!</h1>
+  const context = canvasRef.current?.getContext('2d')
+
+  return <canvas ref={canvasRef} className="h-screen w-screen bg-slate-950"></canvas>
 }
 
 export default App
