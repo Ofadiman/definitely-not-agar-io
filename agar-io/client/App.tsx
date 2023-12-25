@@ -12,41 +12,122 @@ import { HowToPlay } from './HowToPlay'
 const CIRCLE_RADIUS = 5
 const STARTING_ANGLE = 0
 const ENDING_ANGLE = 2 * Math.PI
+const SPEED = 3
 
-const draw = (context: CanvasRenderingContext2D) => {
-  const x = faker.number.int({ min: 0, max: 500 })
-  const y = faker.number.int({ min: 0, max: 500 })
-  console.log({ x, y })
-
-  context.beginPath()
-  context.arc(x, y, CIRCLE_RADIUS, STARTING_ANGLE, ENDING_ANGLE)
-  context.fillStyle = 'red'
-  context.fill()
-
-  context.strokeStyle = 'green'
-  context.lineWidth = 3
-  context.stroke()
-  context.closePath()
+type Player = {
+  locX: number
+  locY: number
 }
 
 export const App = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const playerRef = useRef<Player>({
+    locX: faker.number.int({ min: 0, max: window.innerWidth }),
+    locY: faker.number.int({ min: 0, max: window.innerHeight }),
+  })
   const [username, setUsername] = useState(faker.person.firstName())
   const [isUsernameModalOpen, setIsUsernameModalOpen] = useState(false)
   const [isGameActionModalOpen, setIsGameActionModalOpen] = useState(false)
 
-  useLayoutEffect(() => {
-    const context = canvasRef.current?.getContext('2d')
+  const draw = () => {
+    if (canvasRef.current === null || canvasRef.current === undefined) {
+      return
+    }
+    const context = canvasRef.current.getContext('2d')
     if (context === undefined || context === null) {
       return
     }
 
-    draw(context)
+    context.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
+
+    context.setTransform(1, 0, 0, 1, 0, 0)
+
+    context.translate(
+      -playerRef.current.locX + canvasRef.current.width / 2,
+      -playerRef.current.locY + canvasRef.current.height / 2,
+    )
+
+    context.beginPath()
+    context.arc(
+      playerRef.current.locX,
+      playerRef.current.locY,
+      CIRCLE_RADIUS,
+      STARTING_ANGLE,
+      ENDING_ANGLE,
+    )
+    context.fillStyle = 'red'
+    context.fill()
+
+    context.strokeStyle = 'green'
+    context.lineWidth = 3
+    context.stroke()
+    context.closePath()
+
+    requestAnimationFrame(draw)
+  }
+
+  useLayoutEffect(() => {
+    const requestId = requestAnimationFrame(draw)
+    return () => {
+      cancelAnimationFrame(requestId)
+    }
   }, [])
 
   return (
     <>
       <canvas
+        onMouseMove={(event) => {
+          if (canvasRef.current === null || canvasRef.current === undefined) {
+            return
+          }
+          const context = canvasRef.current.getContext('2d')
+          if (context === undefined || context === null) {
+            return
+          }
+
+          const mousePosition = {
+            x: event.clientX,
+            y: event.clientY,
+          }
+          const angleDeg =
+            (Math.atan2(
+              mousePosition.y - canvasRef.current.height / 2,
+              mousePosition.x - canvasRef.current.width / 2,
+            ) *
+              180) /
+            Math.PI
+
+          let xVector: number = 0
+          let yVector: number = 0
+          if (angleDeg >= 0 && angleDeg < 90) {
+            xVector = 1 - angleDeg / 90
+            yVector = -(angleDeg / 90)
+          } else if (angleDeg >= 90 && angleDeg <= 180) {
+            xVector = -(angleDeg - 90) / 90
+            yVector = -(1 - (angleDeg - 90) / 90)
+          } else if (angleDeg >= -180 && angleDeg < -90) {
+            xVector = (angleDeg + 90) / 90
+            yVector = 1 + (angleDeg + 90) / 90
+          } else if (angleDeg < 0 && angleDeg >= -90) {
+            xVector = (angleDeg + 90) / 90
+            yVector = 1 - (angleDeg + 90) / 90
+          }
+
+          if (
+            (playerRef.current.locX < 0 && xVector < 0) ||
+            (playerRef.current.locX > window.innerWidth && xVector > 0)
+          ) {
+            playerRef.current.locY -= SPEED * yVector
+          } else if (
+            (playerRef.current.locY < 0 && yVector > 0) ||
+            (playerRef.current.locY > window.innerHeight && yVector < 0)
+          ) {
+            playerRef.current.locX += SPEED * xVector
+          } else {
+            playerRef.current.locX += SPEED * xVector
+            playerRef.current.locY -= SPEED * yVector
+          }
+        }}
         ref={canvasRef}
         style={{ display: 'block', width: window.innerWidth, height: window.innerHeight }}
         width={window.innerWidth}
