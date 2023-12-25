@@ -81,13 +81,6 @@ export const App = () => {
     requestAnimationFrame(draw)
   }
 
-  useLayoutEffect(() => {
-    const requestId = requestAnimationFrame(draw)
-    return () => {
-      cancelAnimationFrame(requestId)
-    }
-  }, [])
-
   useEffect(() => {
     socket.connect()
 
@@ -98,6 +91,10 @@ export const App = () => {
     socket.on('initServer', (data) => {
       console.log(data)
       orbsRef.current = data.orbs
+    })
+
+    socket.on('tick', (players) => {
+      console.log(players)
     })
 
     return () => {

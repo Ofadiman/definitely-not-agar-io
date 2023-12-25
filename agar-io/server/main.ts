@@ -26,6 +26,7 @@ const createInitialOrbs = (orbsCount: number) => {
 }
 const orbs = createInitialOrbs(GAME_SETTINGS.DEFAULT_NUMBER_OF_ORBS)
 const players: Player[] = []
+let intervalId: NodeJS.Timeout | null = null
 
 const server = fastify({
   logger: true,
@@ -46,9 +47,16 @@ server.ready().then(() => {
   server.log.info('server.ready()')
 
   server.io.on('connect', (socket) => {
+    socket.join('game')
     console.log('socket connected')
 
     socket.on('initClient', (username) => {
+      if (players.length === 0) {
+        intervalId = setInterval(() => {
+          server.log.info('tick')
+          server.io.to('game').emit('tick', players)
+        }, 1000 / 30)
+      }
       const playerConfig = new PlayerConfig()
       const playerData = new PlayerData(username)
       const player = new Player({
@@ -59,6 +67,14 @@ server.ready().then(() => {
       players.push(player)
 
       socket.emit('initServer', { orbs, player })
+    })
+
+    socket.on('disconnect', () => {
+      if (players.length === 0) {
+        if (intervalId !== null) {
+          clearInterval(intervalId)
+        }
+      }
     })
   })
 })
