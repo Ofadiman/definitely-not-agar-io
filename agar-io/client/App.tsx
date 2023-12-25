@@ -33,7 +33,7 @@ export const App = () => {
   })
   const orbsRef = useRef<Orb[]>([])
   const [username, setUsername] = useState(faker.person.firstName())
-  const [isUsernameModalOpen, setIsUsernameModalOpen] = useState(false)
+  const [isUsernameModalOpen, setIsUsernameModalOpen] = useState(true)
   const [isGameActionModalOpen, setIsGameActionModalOpen] = useState(false)
 
   const draw = () => {
@@ -95,8 +95,8 @@ export const App = () => {
       console.log('socket connected')
     })
 
-    socket.on('init', (data) => {
-      console.log(data.orbs)
+    socket.on('initServer', (data) => {
+      console.log(data)
       orbsRef.current = data.orbs
     })
 
@@ -222,6 +222,7 @@ export const App = () => {
           <Button
             onClick={() => {
               setIsGameActionModalOpen(false)
+              socket.emit('initClient', username)
             }}
             variant="contained"
             color="primary"

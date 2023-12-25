@@ -8,6 +8,8 @@ import {
   InterServerEvents,
   ServerToClientEvents,
 } from '../shared/types'
+import { GAME_SETTINGS } from '../shared/settings'
+import { Player, PlayerConfig, PlayerData } from '../shared/player'
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -15,14 +17,15 @@ declare module 'fastify' {
   }
 }
 
-const createInitialOrbs = () => {
+const createInitialOrbs = (orbsCount: number) => {
   const orbs: Orb[] = []
-  for (let i = 0; i < 500; i++) {
+  for (let i = 0; i < orbsCount; i++) {
     orbs.push(new Orb())
   }
   return orbs
 }
-const orbs = createInitialOrbs()
+const orbs = createInitialOrbs(GAME_SETTINGS.DEFAULT_NUMBER_OF_ORBS)
+const players: Player[] = []
 
 const server = fastify({
   logger: true,
@@ -44,7 +47,19 @@ server.ready().then(() => {
 
   server.io.on('connect', (socket) => {
     console.log('socket connected')
-    socket.emit('init', { orbs })
+
+    socket.on('initClient', (username) => {
+      const playerConfig = new PlayerConfig()
+      const playerData = new PlayerData(username)
+      const player = new Player({
+        socketId: socket.id,
+        data: playerData,
+        config: playerConfig,
+      })
+      players.push(player)
+
+      socket.emit('initServer', { orbs, player })
+    })
   })
 })
 

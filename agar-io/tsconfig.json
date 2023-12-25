@@ -38,8 +38,10 @@
   "include": ["client", "server", "shared"],
   "references": [{ "path": "./tsconfig.node.json" }],
   "ts-node": {
+    "transpileOnly": true,
     "compilerOptions": {
-      "module": "CommonJS"
+      "module": "CommonJS",
+      "moduleResolution": "node"
     }
   }
 }
