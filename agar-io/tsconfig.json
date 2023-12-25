@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-
+    "esModuleInterop": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
@@ -35,6 +35,11 @@
     "allowUnusedLabels": false /* Disable error reporting for unused labels. */,
     "allowUnreachableCode": false /* Disable error reporting for unreachable code. */
   },
-  "include": ["client", "server"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": ["client", "server", "shared"],
+  "references": [{ "path": "./tsconfig.node.json" }],
+  "ts-node": {
+    "compilerOptions": {
+      "module": "CommonJS"
+    }
+  }
 }

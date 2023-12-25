@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import Dialog from '@mui/material/Dialog'
 import DialogTitle from '@mui/material/DialogTitle'
 import DialogContent from '@mui/material/DialogContent'
@@ -8,6 +8,10 @@ import TextField from '@mui/material/TextField'
 import { faker } from '@faker-js/faker'
 import { DialogActions } from '@mui/material'
 import { HowToPlay } from './HowToPlay'
+import { grey } from '@mui/material/colors'
+import { Socket, io } from 'socket.io-client'
+import { ClientToServerEvents, ServerToClientEvents } from '../shared/types'
+import { Orb } from '../shared/orb'
 
 const CIRCLE_RADIUS = 5
 const STARTING_ANGLE = 0
@@ -19,12 +23,15 @@ type Player = {
   locY: number
 }
 
+const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io('http://localhost:3000/')
+
 export const App = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const playerRef = useRef<Player>({
     locX: faker.number.int({ min: 0, max: window.innerWidth }),
     locY: faker.number.int({ min: 0, max: window.innerHeight }),
   })
+  const orbsRef = useRef<Orb[]>([])
   const [username, setUsername] = useState(faker.person.firstName())
   const [isUsernameModalOpen, setIsUsernameModalOpen] = useState(false)
   const [isGameActionModalOpen, setIsGameActionModalOpen] = useState(false)
@@ -38,9 +45,8 @@ export const App = () => {
       return
     }
 
-    context.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
-
     context.setTransform(1, 0, 0, 1, 0, 0)
+    context.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
 
     context.translate(
       -playerRef.current.locX + canvasRef.current.width / 2,
@@ -58,10 +64,19 @@ export const App = () => {
     context.fillStyle = 'red'
     context.fill()
 
-    context.strokeStyle = 'green'
-    context.lineWidth = 3
+    context.strokeStyle = grey[300]
+    context.lineWidth = 1
     context.stroke()
+
     context.closePath()
+
+    orbsRef.current.forEach((orb) => {
+      context.beginPath()
+      context.arc(orb.locX, orb.locY, orb.radius, STARTING_ANGLE, ENDING_ANGLE)
+      context.fillStyle = orb.color
+      context.fill()
+      context.closePath()
+    })
 
     requestAnimationFrame(draw)
   }
@@ -70,6 +85,23 @@ export const App = () => {
     const requestId = requestAnimationFrame(draw)
     return () => {
       cancelAnimationFrame(requestId)
+    }
+  }, [])
+
+  useEffect(() => {
+    socket.connect()
+
+    socket.on('connect', () => {
+      console.log('socket connected')
+    })
+
+    socket.on('init', (data) => {
+      console.log(data.orbs)
+      orbsRef.current = data.orbs
+    })
+
+    return () => {
+      socket.disconnect()
     }
   }, [])
 

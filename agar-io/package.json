@@ -1,9 +1,8 @@
 {
   "name": "agar-io",
-  "type": "module",
   "scripts": {
     "dev:client": "vite serve client",
-    "dev:server": "vite serve server",
+    "dev:server": "nodemon server/main.ts",
     "dev": "concurrently pnpm:dev:*",
     "format": "prettier --write ."
   },
