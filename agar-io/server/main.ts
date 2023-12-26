@@ -46,6 +46,8 @@ server.get('/', () => {
 server.ready().then(() => {
   server.log.info('server.ready()')
 
+  let player: Player
+
   server.io.on('connect', (socket) => {
     socket.join('game')
     console.log('socket connected')
@@ -53,13 +55,13 @@ server.ready().then(() => {
     socket.on('initClient', (username) => {
       if (players.length === 0) {
         intervalId = setInterval(() => {
-          server.log.info('tick')
           server.io.to('game').emit('tick', players)
         }, 1000 / 30)
       }
+
       const playerConfig = new PlayerConfig()
       const playerData = new PlayerData(username)
-      const player = new Player({
+      player = new Player({
         socketId: socket.id,
         data: playerData,
         config: playerConfig,
@@ -67,6 +69,30 @@ server.ready().then(() => {
       players.push(player)
 
       socket.emit('initServer', { orbs, player })
+    })
+
+    socket.on('tock', (data) => {
+      if (player === undefined) {
+        return
+      }
+
+      player.state.config.xVector = data.xVector
+      player.state.config.yVector = data.yVector
+
+      if (
+        (player.state.data.locX < 0 && data.xVector < 0) ||
+        (player.state.data.locX > GAME_SETTINGS.MAP_WIDTH && data.xVector > 0)
+      ) {
+        player.state.data.locY -= player.state.config.speed * data.yVector
+      } else if (
+        (player.state.data.locY < 0 && data.yVector > 0) ||
+        (player.state.data.locY > GAME_SETTINGS.MAP_HEIGHT && data.yVector < 0)
+      ) {
+        player.state.data.locX += player.state.config.speed * data.xVector
+      } else {
+        player.state.data.locX += player.state.config.speed * data.xVector
+        player.state.data.locY -= player.state.config.speed * data.yVector
+      }
     })
 
     socket.on('disconnect', () => {

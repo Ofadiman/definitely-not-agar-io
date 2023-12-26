@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Dialog from '@mui/material/Dialog'
 import DialogTitle from '@mui/material/DialogTitle'
 import DialogContent from '@mui/material/DialogContent'
@@ -12,25 +12,16 @@ import { grey } from '@mui/material/colors'
 import { Socket, io } from 'socket.io-client'
 import { ClientToServerEvents, ServerToClientEvents } from '../shared/types'
 import { Orb } from '../shared/orb'
+import { Player } from '../shared/player'
 
-const CIRCLE_RADIUS = 5
 const STARTING_ANGLE = 0
 const ENDING_ANGLE = 2 * Math.PI
-const SPEED = 3
-
-type Player = {
-  locX: number
-  locY: number
-}
 
 const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io('http://localhost:3000/')
 
 export const App = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
-  const playerRef = useRef<Player>({
-    locX: faker.number.int({ min: 0, max: window.innerWidth }),
-    locY: faker.number.int({ min: 0, max: window.innerHeight }),
-  })
+  const playerRef = useRef<Player | null>(null)
   const orbsRef = useRef<Orb[]>([])
   const [username, setUsername] = useState(faker.person.firstName())
   const [isUsernameModalOpen, setIsUsernameModalOpen] = useState(true)
@@ -38,10 +29,16 @@ export const App = () => {
 
   const draw = () => {
     if (canvasRef.current === null || canvasRef.current === undefined) {
+      console.error('canvasRef.current is null or undefined')
       return
     }
     const context = canvasRef.current.getContext('2d')
     if (context === undefined || context === null) {
+      console.error('canvasRef.current.getContext("2d") is null or undefined')
+      return
+    }
+    if (playerRef.current === null) {
+      console.error('playerRef.current is null')
       return
     }
 
@@ -49,15 +46,15 @@ export const App = () => {
     context.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
 
     context.translate(
-      -playerRef.current.locX + canvasRef.current.width / 2,
-      -playerRef.current.locY + canvasRef.current.height / 2,
+      -playerRef.current.state.data.locX + canvasRef.current.width / 2,
+      -playerRef.current.state.data.locY + canvasRef.current.height / 2,
     )
 
     context.beginPath()
     context.arc(
-      playerRef.current.locX,
-      playerRef.current.locY,
-      CIRCLE_RADIUS,
+      playerRef.current.state.data.locX,
+      playerRef.current.state.data.locY,
+      playerRef.current.state.data.radius,
       STARTING_ANGLE,
       ENDING_ANGLE,
     )
@@ -86,15 +83,34 @@ export const App = () => {
 
     socket.on('connect', () => {
       console.log('socket connected')
+      console.log('socket.id after connect', socket.id)
     })
 
     socket.on('initServer', (data) => {
-      console.log(data)
       orbsRef.current = data.orbs
+      playerRef.current = data.player
+
+      setInterval(() => {
+        if (playerRef.current === null) {
+          return
+        }
+
+        socket.emit('tock', {
+          xVector: playerRef.current.state.config.xVector,
+          yVector: playerRef.current.state.config.yVector,
+        })
+      }, 1000 / 33)
+
+      draw()
     })
 
     socket.on('tick', (players) => {
-      console.log(players)
+      const player = players.find((player) => player.state.data.name === username)
+      if (player === undefined) {
+        console.log(`player with username: ${username} not found`)
+        return
+      }
+      playerRef.current = player
     })
 
     return () => {
@@ -142,23 +158,20 @@ export const App = () => {
             yVector = 1 - (angleDeg + 90) / 90
           }
 
-          if (
-            (playerRef.current.locX < 0 && xVector < 0) ||
-            (playerRef.current.locX > window.innerWidth && xVector > 0)
-          ) {
-            playerRef.current.locY -= SPEED * yVector
-          } else if (
-            (playerRef.current.locY < 0 && yVector > 0) ||
-            (playerRef.current.locY > window.innerHeight && yVector < 0)
-          ) {
-            playerRef.current.locX += SPEED * xVector
-          } else {
-            playerRef.current.locX += SPEED * xVector
-            playerRef.current.locY -= SPEED * yVector
+          if (playerRef.current === null) {
+            return
           }
+
+          playerRef.current.state.config.xVector = xVector
+          playerRef.current.state.config.yVector = yVector
         }}
         ref={canvasRef}
-        style={{ display: 'block', width: window.innerWidth, height: window.innerHeight }}
+        style={{
+          background: 'black',
+          display: 'block',
+          width: window.innerWidth,
+          height: window.innerHeight,
+        }}
         width={window.innerWidth}
         height={window.innerHeight}
       ></canvas>

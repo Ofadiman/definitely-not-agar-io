@@ -8,6 +8,7 @@ export type ServerToClientEvents = {
 
 export type ClientToServerEvents = {
   initClient: (username: string) => void
+  tock: (data: { xVector: number; yVector: number }) => void
 }
 
 export type InterServerEvents = {}
