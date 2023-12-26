@@ -10,6 +10,7 @@ import {
 } from '../shared/types'
 import { GAME_SETTINGS } from '../shared/settings'
 import { Player, PlayerConfig, PlayerData } from '../shared/player'
+import { checkForOrbCollisions, checkForPlayerCollisions } from './collisions'
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -65,6 +66,7 @@ server.ready().then(() => {
         socketId: socket.id,
         data: playerData,
         config: playerConfig,
+        isAlive: true,
       })
       players.push(player)
 
@@ -80,18 +82,35 @@ server.ready().then(() => {
       player.state.config.yVector = data.yVector
 
       if (
-        (player.state.data.locX < 0 && data.xVector < 0) ||
-        (player.state.data.locX > GAME_SETTINGS.MAP_WIDTH && data.xVector > 0)
-      ) {
-        player.state.data.locY -= player.state.config.speed * data.yVector
-      } else if (
-        (player.state.data.locY < 0 && data.yVector > 0) ||
-        (player.state.data.locY > GAME_SETTINGS.MAP_HEIGHT && data.yVector < 0)
+        (player.state.data.locX > 5 && data.xVector < 0) ||
+        (player.state.data.locX < GAME_SETTINGS.MAP_WIDTH && data.xVector > 0)
       ) {
         player.state.data.locX += player.state.config.speed * data.xVector
-      } else {
-        player.state.data.locX += player.state.config.speed * data.xVector
+      }
+
+      if (
+        (player.state.data.locY > 0 && data.yVector > 0) ||
+        (player.state.data.locY < GAME_SETTINGS.MAP_HEIGHT && data.yVector < 0)
+      ) {
         player.state.data.locY -= player.state.config.speed * data.yVector
+      }
+
+      const capturedOrbIndex = checkForOrbCollisions(player.state.data, player.state.config, orbs)
+      if (capturedOrbIndex !== undefined && capturedOrbIndex !== null) {
+        const newOrb = new Orb()
+        orbs.splice(capturedOrbIndex, 1, newOrb)
+
+        server.io.to('game').emit('orbSwitch', { orbIndex: capturedOrbIndex, newOrb })
+      }
+
+      const absorbed = checkForPlayerCollisions(
+        player.state.data,
+        player.state.config,
+        players,
+        player.state.socketId,
+      )
+      if (absorbed) {
+        server.io.to('game').emit('playerAbsorbed', absorbed)
       }
     })
 

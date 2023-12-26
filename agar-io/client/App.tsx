@@ -20,6 +20,7 @@ const ENDING_ANGLE = 2 * Math.PI
 const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io('http://localhost:3000/')
 
 export const App = () => {
+  const animationFrameRef = useRef<number | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const playerRef = useRef<Player | null>(null)
   const orbsRef = useRef<Orb[]>([])
@@ -75,7 +76,7 @@ export const App = () => {
       context.closePath()
     })
 
-    requestAnimationFrame(draw)
+    animationFrameRef.current = requestAnimationFrame(draw)
   }
 
   useEffect(() => {
@@ -113,8 +114,19 @@ export const App = () => {
       playerRef.current = player
     })
 
+    socket.on('orbSwitch', (data) => {
+      orbsRef.current.splice(data.orbIndex, 1, data.newOrb)
+    })
+
+    socket.on('playerAbsorbed', (data) => {
+      console.log(data)
+    })
+
     return () => {
       socket.disconnect()
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current)
+      }
     }
   }, [])
 

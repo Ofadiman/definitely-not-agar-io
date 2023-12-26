@@ -27,6 +27,7 @@ export class Player {
       socketId: string
       config: PlayerConfig
       data: PlayerData
+      isAlive: boolean
     },
   ) { }
 }
