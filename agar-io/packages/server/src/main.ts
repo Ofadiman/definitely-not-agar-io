@@ -1,15 +1,17 @@
 import fastify from 'fastify'
 import fastifyIO from 'fastify-socket.io'
-import { Orb } from '../shared/orb'
+import { Orb } from 'shared'
 import { Server } from 'socket.io'
 import {
+  Player,
+  PlayerConfig,
+  PlayerData,
+  GAME_SETTINGS,
   ClientToServerEvents,
-  SocketData,
-  InterServerEvents,
   ServerToClientEvents,
-} from '../shared/types'
-import { GAME_SETTINGS } from '../shared/settings'
-import { Player, PlayerConfig, PlayerData } from '../shared/player'
+  InterServerEvents,
+  SocketData,
+} from 'shared'
 import { checkForOrbCollisions, checkForPlayerCollisions } from './collisions'
 
 declare module 'fastify' {

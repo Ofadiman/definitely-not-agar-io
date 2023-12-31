@@ -1,5 +1,4 @@
-import { Orb } from '../shared/orb'
-import { Player, PlayerConfig, PlayerData } from '../shared/player'
+import { Player, PlayerConfig, PlayerData, Orb } from 'shared'
 
 export const checkForOrbCollisions = (pData: PlayerData, pConfig: PlayerConfig, orbs: Orb[]) => {
   for (let i = 0; i < orbs.length; i++) {
@@ -16,7 +15,7 @@ export const checkForOrbCollisions = (pData: PlayerData, pConfig: PlayerConfig, 
     ) {
       const distance = Math.sqrt(
         (pData.locX - orb.locX) * (pData.locX - orb.locX) +
-        (pData.locY - orb.locY) * (pData.locY - orb.locY),
+          (pData.locY - orb.locY) * (pData.locY - orb.locY),
       )
       if (distance < pData.radius + orb.radius) {
         pData.score += 1
