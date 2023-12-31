@@ -1,65 +1,107 @@
 import { faker } from '@faker-js/faker'
+import { z } from 'zod'
 
 export const GAME_SETTINGS = {
-  DEFAULT_NUMBER_OF_ORBS: 500,
-  DEFAULT_PLAYER_SPEED: 3,
-  DEFAULT_PLAYER_SIZE: 6,
+  DEFAULT_NUMBER_OF_ORBS: 10,
   DEFAULT_ORB_SIZE: 5,
-  DEFAULT_ZOOM: 1.5,
-  MAP_WIDTH: 500,
+  DEFAULT_PLAYER_SIZE: 10,
+  DEFAULT_PLAYER_SPEED: 3,
+  DEFAULT_PLAYER_ZOOM: 1.5,
+  DEFAULT_PLAYER_SCORE: 0,
   MAP_HEIGHT: 500,
+  MAP_WIDTH: 500,
 } as const
 
-export class Orb {
-  public color = faker.color.human()
-  public locX = faker.number.int({ min: 0, max: GAME_SETTINGS.MAP_WIDTH })
-  public locY = faker.number.int({ min: 0, max: GAME_SETTINGS.MAP_HEIGHT })
-  public radius = 5
+export type Orb = {
+  id: string
+  color: string
+  location: {
+    x: number
+    y: number
+  }
+  size: number
 }
 
-export class PlayerData {
-  public color: string = faker.color.human()
-  public radius: number = GAME_SETTINGS.DEFAULT_PLAYER_SIZE
-  public locX: number = faker.number.int({ min: 0, max: GAME_SETTINGS.MAP_WIDTH })
-  public locY: number = faker.number.int({ min: 0, max: GAME_SETTINGS.MAP_HEIGHT })
-  public score: number = 0
-  public absorbOrbsCount: number = 0
-
-  constructor(public name: string) {}
-}
-
-export class PlayerConfig {
-  public xVector = 0
-  public yVector = 0
-  public speed = GAME_SETTINGS.DEFAULT_PLAYER_SPEED
-  public zoom = GAME_SETTINGS.DEFAULT_ZOOM
-
-  constructor() {}
-}
-
-export class Player {
-  constructor(
-    public state: {
-      socketId: string
-      config: PlayerConfig
-      data: PlayerData
-      isAlive: boolean
+export const createOrb = (): Orb => {
+  return {
+    id: faker.string.uuid(),
+    location: {
+      x: faker.number.int({ min: 0, max: GAME_SETTINGS.MAP_WIDTH }),
+      y: faker.number.int({ min: 0, max: GAME_SETTINGS.MAP_HEIGHT }),
     },
-  ) {}
+    size: 5,
+    color: faker.color.human(),
+  }
+}
+
+export type Player = {
+  id: string
+  socketId: string
+  name: string
+  isAlive: boolean
+  speed: number
+  zoom: number
+  color: string
+  size: number
+  score: number
+  absorbedOrbsCount: number
+  location: {
+    x: number
+    y: number
+  }
+  vector: {
+    x: number
+    y: number
+  }
+}
+
+export const createPlayer = (data: { name: string; socketId: string }): Player => {
+  return {
+    color: faker.color.human(),
+    size: GAME_SETTINGS.DEFAULT_PLAYER_SIZE,
+    location: {
+      x: 0,
+      y: 0,
+    },
+    speed: GAME_SETTINGS.DEFAULT_PLAYER_SPEED,
+    zoom: GAME_SETTINGS.DEFAULT_PLAYER_ZOOM,
+    id: faker.string.uuid(),
+    name: data.name,
+    score: GAME_SETTINGS.DEFAULT_PLAYER_SCORE,
+    vector: {
+      x: 0,
+      y: 0,
+    },
+    isAlive: true,
+    socketId: data.socketId,
+    absorbedOrbsCount: 0,
+  }
+}
+
+export type Game = {
+  orbs: Record<string, Orb>
+  players: Record<string, Player>
 }
 
 export type ServerToClientEvents = {
-  initServer: (data: { orbs: Orb[]; player: Player }) => void
-  tick: (data: Player[]) => void
-  orbSwitch: (data: { orbIndex: number; newOrb: Orb }) => void
-  playerAbsorbed: (data: { absorbed: string; absorbedBy: string }) => void
+  gameState: (data: Game) => void
+  tick: (data: Record<string, Player>) => void
+  orbConsumed: (data: { consumedOrbId: string; newOrb: Orb }) => void
+  // orbSwitch: (data: { orbIndex: number; newOrb: Orb }) => void
+  // playerAbsorbed: (data: { absorbed: string; absorbedBy: string }) => void
 }
 
 export type ClientToServerEvents = {
-  initClient: (username: string) => void
-  tock: (data: { xVector: number; yVector: number }) => void
+  joinGame: (data: { name: string }) => void
+  tock: (data: { x: number; y: number }) => void
 }
 
 export type InterServerEvents = {}
 
 export type SocketData = {}
+
+export const playerFormSchema = z.object({
+  name: z.string().min(3).max(20),
+})
+
+export type PlayerForm = z.infer<typeof playerFormSchema>

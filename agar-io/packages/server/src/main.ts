@@ -1,11 +1,9 @@
 import fastify from 'fastify'
 import fastifyIO from 'fastify-socket.io'
-import { Orb } from 'shared'
+import { Game, Orb, createOrb, createPlayer } from 'shared'
 import { Server } from 'socket.io'
 import {
   Player,
-  PlayerConfig,
-  PlayerData,
   GAME_SETTINGS,
   ClientToServerEvents,
   ServerToClientEvents,
@@ -20,15 +18,15 @@ declare module 'fastify' {
   }
 }
 
-const createInitialOrbs = (orbsCount: number) => {
-  const orbs: Orb[] = []
+const createInitialOrbs = (orbsCount: number): Record<string, Orb> => {
+  const orbs: Record<string, Orb> = {}
   for (let i = 0; i < orbsCount; i++) {
-    orbs.push(new Orb())
+    const orb = createOrb()
+    orbs[orb.id] = orb
   }
   return orbs
 }
-const orbs = createInitialOrbs(GAME_SETTINGS.DEFAULT_NUMBER_OF_ORBS)
-const players: Player[] = []
+
 let intervalId: NodeJS.Timeout | null = null
 
 const server = fastify({
@@ -46,81 +44,77 @@ server.get('/', () => {
   return { status: 'ok' }
 })
 
+const game: Game = {
+  players: {},
+  orbs: createInitialOrbs(GAME_SETTINGS.DEFAULT_NUMBER_OF_ORBS),
+}
+
 server.ready().then(() => {
-  server.log.info('server.ready()')
-
-  let player: Player
-
   server.io.on('connect', (socket) => {
     socket.join('game')
-    console.log('socket connected')
 
-    socket.on('initClient', (username) => {
-      if (players.length === 0) {
+    socket.on('joinGame', (data) => {
+      if (Object.keys(game.players).length === 0) {
         intervalId = setInterval(() => {
-          server.io.to('game').emit('tick', players)
+          server.io.to('game').emit('tick', game.players)
         }, 1000 / 30)
       }
 
-      const playerConfig = new PlayerConfig()
-      const playerData = new PlayerData(username)
-      player = new Player({
-        socketId: socket.id,
-        data: playerData,
-        config: playerConfig,
-        isAlive: true,
-      })
-      players.push(player)
+      game.players[socket.id] = createPlayer({ socketId: socket.id, name: data.name })
 
-      socket.emit('initServer', { orbs, player })
+      socket.emit('gameState', game)
     })
 
-    socket.on('tock', (data) => {
+    socket.on('tock', (vector) => {
+      const player = game.players[socket.id]
       if (player === undefined) {
         return
       }
 
-      player.state.config.xVector = data.xVector
-      player.state.config.yVector = data.yVector
+      player.vector.x = vector.x
+      player.vector.y = vector.y
 
       if (
-        (player.state.data.locX > 5 && data.xVector < 0) ||
-        (player.state.data.locX < GAME_SETTINGS.MAP_WIDTH && data.xVector > 0)
+        (player.location.x > 0 && vector.x < 0) ||
+        (player.location.x < GAME_SETTINGS.MAP_WIDTH && vector.x > 0)
       ) {
-        player.state.data.locX += player.state.config.speed * data.xVector
+        player.location.x += player.speed * vector.x
       }
 
       if (
-        (player.state.data.locY > 0 && data.yVector > 0) ||
-        (player.state.data.locY < GAME_SETTINGS.MAP_HEIGHT && data.yVector < 0)
+        (player.location.y > 0 && vector.y > 0) ||
+        (player.location.y < GAME_SETTINGS.MAP_HEIGHT && vector.y < 0)
       ) {
-        player.state.data.locY -= player.state.config.speed * data.yVector
+        player.location.y -= player.speed * vector.y
       }
 
-      const capturedOrbIndex = checkForOrbCollisions(player.state.data, player.state.config, orbs)
-      if (capturedOrbIndex !== undefined && capturedOrbIndex !== null) {
-        const newOrb = new Orb()
-        orbs.splice(capturedOrbIndex, 1, newOrb)
+      const orbId = checkForOrbCollisions(player, game.orbs)
+      if (orbId !== null) {
+        delete game.orbs[orbId]
 
-        server.io.to('game').emit('orbSwitch', { orbIndex: capturedOrbIndex, newOrb })
+        const newOrb = createOrb()
+
+        game.orbs[newOrb.id] = newOrb
+
+        server.io.to('game').emit('orbConsumed', { consumedOrbId: orbId, newOrb })
       }
 
-      const absorbed = checkForPlayerCollisions(
-        player.state.data,
-        player.state.config,
-        players,
-        player.state.socketId,
-      )
-      if (absorbed) {
-        server.io.to('game').emit('playerAbsorbed', absorbed)
-      }
+      // const absorbed = checkForPlayerCollisions(
+      //   player.state.data,
+      //   player.state.config,
+      //   players,
+      //   player.state.socketId,
+      // )
+      // if (absorbed) {
+      //   server.io.to('game').emit('playerAbsorbed', absorbed)
+      // }
     })
 
     socket.on('disconnect', () => {
-      if (players.length === 0) {
-        if (intervalId !== null) {
-          clearInterval(intervalId)
-        }
+      delete game.players[socket.id]
+
+      if (Object.keys(game.players).length === 0 && intervalId !== null) {
+        clearInterval(intervalId)
       }
     })
   })

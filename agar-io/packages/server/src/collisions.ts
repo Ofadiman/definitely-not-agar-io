@@ -1,39 +1,39 @@
-import { Player, PlayerConfig, PlayerData, Orb } from 'shared'
+import { Player, Orb } from 'shared'
 
-export const checkForOrbCollisions = (pData: PlayerData, pConfig: PlayerConfig, orbs: Orb[]) => {
-  for (let i = 0; i < orbs.length; i++) {
-    const orb = orbs[i]
-    if (orb === undefined) {
-      return
-    }
+export const checkForOrbCollisions = (player: Player, orbs: Record<string, Orb>) => {
+  let result = null
+  Object.values(orbs).forEach((orb) => {
     // Performance optimization: First check if squares overlap, because its faster, then check if circles overlap
     if (
-      pData.locX + pData.radius + orb.radius > orb.locX &&
-      pData.locX < orb.locX + pData.radius + orb.radius &&
-      pData.locY + pData.radius + orb.radius > orb.locY &&
-      pData.locY < orb.locY + pData.radius + orb.radius
+      player.location.x + player.size + orb.size > orb.location.x &&
+      player.location.x < orb.location.x + player.size + orb.size &&
+      player.location.y + player.size + orb.size > orb.location.y &&
+      player.location.y < orb.location.y + player.size + orb.size
     ) {
       const distance = Math.sqrt(
-        (pData.locX - orb.locX) * (pData.locX - orb.locX) +
-          (pData.locY - orb.locY) * (pData.locY - orb.locY),
+        (player.location.x - orb.location.x) * (player.location.x - orb.location.x) +
+        (player.location.y - orb.location.y) * (player.location.y - orb.location.y),
       )
-      if (distance < pData.radius + orb.radius) {
-        pData.score += 1
-        pData.absorbOrbsCount += 1
-        if (pConfig.zoom > 1) {
-          pConfig.zoom -= 0.001
+      if (distance < player.size + orb.size) {
+        player.score += 1
+        player.absorbedOrbsCount += 1
+        if (player.zoom > 1) {
+          player.zoom -= 0.001
         }
-        pData.radius += 0.05
-        if (pConfig.speed < -0.005) {
-          pConfig.speed += 0.005
-        } else if (pConfig.speed > 0.005) {
-          pConfig.speed -= 0.005
+
+        player.size += 0.05
+        if (player.speed < -0.005) {
+          player.speed += 0.005
+        } else if (player.speed > 0.005) {
+          player.speed -= 0.005
         }
-        return i
+
+        result = orb.id
       }
     }
-  }
-  return null
+  })
+
+  return result
 }
 
 export const checkForPlayerCollisions = (

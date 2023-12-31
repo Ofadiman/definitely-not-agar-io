@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Dialog from '@mui/material/Dialog'
 import DialogTitle from '@mui/material/DialogTitle'
 import DialogContent from '@mui/material/DialogContent'
@@ -9,53 +9,64 @@ import { faker } from '@faker-js/faker'
 import { DialogActions } from '@mui/material'
 import { grey } from '@mui/material/colors'
 import { Socket, io } from 'socket.io-client'
-import { Orb, Player, ClientToServerEvents, ServerToClientEvents } from 'shared'
-import { z } from 'zod'
+import {
+  Orb,
+  Player,
+  ClientToServerEvents,
+  ServerToClientEvents,
+  PlayerForm,
+  playerFormSchema,
+  Game,
+} from 'shared'
 import { useForm, SubmitHandler } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 
 const STARTING_ANGLE = 0
 const ENDING_ANGLE = 2 * Math.PI
 
-export const usernameFormSchema = z.object({
-  username: z.string().min(3).max(20),
-})
-
-export type UsernameForm = z.infer<typeof usernameFormSchema>
-
 const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io('http://localhost:3000/')
 
 export const App = () => {
+  const gameRef = useRef<Game | null>(null)
+  const gameIntervalIdRef = useRef<number | null>(null)
   const [isUsernameModalOpen, setIsUsernameModalOpen] = useState(true)
-  const { register, handleSubmit, formState } = useForm<UsernameForm>({
-    resolver: zodResolver(usernameFormSchema),
+  const { register, handleSubmit, formState, getValues } = useForm<PlayerForm>({
+    resolver: zodResolver(playerFormSchema),
     defaultValues: {
-      username: faker.person.firstName(),
+      name: faker.person.firstName(),
     },
   })
-
-  const onSubmit: SubmitHandler<UsernameForm> = (data) => {
-    setIsUsernameModalOpen(false)
-    console.log(data)
-  }
-
   const animationFrameRef = useRef<number | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
-  const playerRef = useRef<Player | null>(null)
-  const orbsRef = useRef<Orb[]>([])
 
-  const draw = () => {
-    if (canvasRef.current === null || canvasRef.current === undefined) {
-      console.error('canvasRef.current is null or undefined')
+  const onSubmit: SubmitHandler<PlayerForm> = (data) => {
+    setIsUsernameModalOpen(false)
+    socket.emit('joinGame', { name: data.name })
+  }
+
+  const draw = useCallback(() => {
+    if (canvasRef.current === null) {
+      console.error('canvasRef.current is null in draw()')
       return
     }
+    if (canvasRef.current === undefined) {
+      console.error('canvasRef.current is undefined in draw()')
+      return
+    }
+    if (gameRef.current === null) {
+      console.error('gameRef.current is null in draw()')
+      return
+    }
+
     const context = canvasRef.current.getContext('2d')
-    if (context === undefined || context === null) {
-      console.error('canvasRef.current.getContext("2d") is null or undefined')
+    if (context === null) {
+      console.error('canvasRef.current.getContext("2d") is null in draw()')
       return
     }
-    if (playerRef.current === null) {
-      console.error('playerRef.current is null')
+
+    const player = gameRef.current.players[socket.id]
+    if (player === undefined) {
+      console.error('player is undefined in draw()')
       return
     }
 
@@ -63,86 +74,105 @@ export const App = () => {
     context.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
 
     context.translate(
-      -playerRef.current.state.data.locX + canvasRef.current.width / 2,
-      -playerRef.current.state.data.locY + canvasRef.current.height / 2,
+      -player.location.x + canvasRef.current.width / 2,
+      -player.location.y + canvasRef.current.height / 2,
     )
 
-    context.beginPath()
-    context.arc(
-      playerRef.current.state.data.locX,
-      playerRef.current.state.data.locY,
-      playerRef.current.state.data.radius,
-      STARTING_ANGLE,
-      ENDING_ANGLE,
-    )
-    context.fillStyle = 'red'
-    context.fill()
+    // context.strokeStyle = 'red'
+    // context.lineWidth = 4
+    // context.strokeRect(0, 0, 20, 20)
 
-    context.strokeStyle = grey[300]
-    context.lineWidth = 1
-    context.stroke()
-
-    context.closePath()
-
-    orbsRef.current.forEach((orb) => {
+    Object.values(gameRef.current.players).forEach((player) => {
       context.beginPath()
-      context.arc(orb.locX, orb.locY, orb.radius, STARTING_ANGLE, ENDING_ANGLE)
+      context.arc(player.location.x, player.location.y, player.size, STARTING_ANGLE, ENDING_ANGLE)
+      context.fillStyle = player.color
+      context.fill()
+
+      context.strokeStyle = grey[300]
+      context.lineWidth = 1
+      context.stroke()
+
+      context.closePath()
+    })
+
+    Object.values(gameRef.current.orbs).forEach((orb) => {
+      context.beginPath()
+      context.arc(orb.location.x, orb.location.y, orb.size, STARTING_ANGLE, ENDING_ANGLE)
       context.fillStyle = orb.color
       context.fill()
       context.closePath()
     })
 
     animationFrameRef.current = requestAnimationFrame(draw)
-  }
+  }, [])
 
   useEffect(() => {
     socket.connect()
 
     socket.on('connect', () => {
-      console.log('socket connected')
-      console.log('socket.id after connect', socket.id)
+      console.log(`socket connected, socket.id: ${socket.id}`)
+
+      // TODO: this code automatically joins a game and should be deleted later
+      console.log(`joining game as ${getValues().name}`)
+      socket.emit('joinGame', { name: getValues().name })
+      setIsUsernameModalOpen(false)
     })
 
-    socket.on('initServer', (data) => {
-      orbsRef.current = data.orbs
-      playerRef.current = data.player
+    socket.on('gameState', (data) => {
+      gameRef.current = data
+      console.log('current game state', data)
 
-      setInterval(() => {
-        if (playerRef.current === null) {
+      const interval = setInterval(() => {
+        if (gameRef.current === null) {
+          console.error('gameRef.current is null in game loop (setInterval)')
+          return
+        }
+
+        const player = gameRef.current.players[socket.id]
+        if (!player) {
+          console.error('player is undefined in game loop (setInterval)')
           return
         }
 
         socket.emit('tock', {
-          xVector: playerRef.current.state.config.xVector,
-          yVector: playerRef.current.state.config.yVector,
+          x: player.vector.x,
+          y: player.vector.y,
         })
       }, 1000 / 33)
+
+      gameIntervalIdRef.current = interval as any as number
 
       draw()
     })
 
     socket.on('tick', (players) => {
-      const username = 'todo'
-      const player = players.find((player) => player.state.data.name === username)
-      if (player === undefined) {
-        console.log(`player with username: ${username} not found`)
+      if (gameRef.current === null) {
         return
       }
-      playerRef.current = player
+
+      console.log('players', players)
+      gameRef.current.players = players
     })
 
-    socket.on('orbSwitch', (data) => {
-      orbsRef.current.splice(data.orbIndex, 1, data.newOrb)
-    })
+    socket.on('orbConsumed', (data) => {
+      if (gameRef.current === null) {
+        return
+      }
 
-    socket.on('playerAbsorbed', (data) => {
-      console.log(data)
+      delete gameRef.current.orbs[data.consumedOrbId]
+
+      gameRef.current.orbs[data.newOrb.id] = data.newOrb
     })
 
     return () => {
       socket.disconnect()
+
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current)
+      }
+
+      if (gameIntervalIdRef.current) {
+        clearInterval(gameIntervalIdRef.current)
       }
     }
   }, [])
@@ -151,7 +181,11 @@ export const App = () => {
     <>
       <canvas
         onMouseMove={(event) => {
-          if (canvasRef.current === null || canvasRef.current === undefined) {
+          if (
+            gameRef.current === null ||
+            canvasRef.current === null ||
+            canvasRef.current === undefined
+          ) {
             return
           }
           const context = canvasRef.current.getContext('2d')
@@ -159,40 +193,39 @@ export const App = () => {
             return
           }
 
-          const mousePosition = {
-            x: event.clientX,
-            y: event.clientY,
-          }
           const angleDeg =
             (Math.atan2(
-              mousePosition.y - canvasRef.current.height / 2,
-              mousePosition.x - canvasRef.current.width / 2,
+              event.clientY - canvasRef.current.height / 2,
+              event.clientX - canvasRef.current.width / 2,
             ) *
               180) /
             Math.PI
 
-          let xVector: number = 0
-          let yVector: number = 0
+          const vector: Player['vector'] = {
+            x: 0,
+            y: 0,
+          }
           if (angleDeg >= 0 && angleDeg < 90) {
-            xVector = 1 - angleDeg / 90
-            yVector = -(angleDeg / 90)
+            vector.x = 1 - angleDeg / 90
+            vector.y = -(angleDeg / 90)
           } else if (angleDeg >= 90 && angleDeg <= 180) {
-            xVector = -(angleDeg - 90) / 90
-            yVector = -(1 - (angleDeg - 90) / 90)
+            vector.x = -(angleDeg - 90) / 90
+            vector.y = -(1 - (angleDeg - 90) / 90)
           } else if (angleDeg >= -180 && angleDeg < -90) {
-            xVector = (angleDeg + 90) / 90
-            yVector = 1 + (angleDeg + 90) / 90
+            vector.x = (angleDeg + 90) / 90
+            vector.y = 1 + (angleDeg + 90) / 90
           } else if (angleDeg < 0 && angleDeg >= -90) {
-            xVector = (angleDeg + 90) / 90
-            yVector = 1 - (angleDeg + 90) / 90
+            vector.x = (angleDeg + 90) / 90
+            vector.y = 1 - (angleDeg + 90) / 90
           }
 
-          if (playerRef.current === null) {
+          const player = gameRef.current.players[socket.id]
+          if (!player) {
+            console.error(`there is no player with id: ${socket.id} in the game`)
             return
           }
 
-          playerRef.current.state.config.xVector = xVector
-          playerRef.current.state.config.yVector = yVector
+          player.vector = vector
         }}
         ref={canvasRef}
         style={{
@@ -210,7 +243,7 @@ export const App = () => {
         <DialogContent dividers>
           <form onSubmit={handleSubmit(onSubmit)}>
             <TextField
-              error={formState.errors.username !== undefined}
+              error={formState.errors.name !== undefined}
               autoFocus
               margin="dense"
               label="Username"
@@ -218,8 +251,8 @@ export const App = () => {
               fullWidth
               variant="outlined"
               style={{ marginBottom: '10px' }}
-              helperText={formState.errors.username?.message}
-              {...register('username')}
+              helperText={formState.errors.name?.message}
+              {...register('name')}
             />
             <Button
               type="submit"
