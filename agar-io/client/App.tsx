@@ -7,26 +7,44 @@ import Button from '@mui/material/Button'
 import TextField from '@mui/material/TextField'
 import { faker } from '@faker-js/faker'
 import { DialogActions } from '@mui/material'
-import { HowToPlay } from './HowToPlay'
 import { grey } from '@mui/material/colors'
 import { Socket, io } from 'socket.io-client'
 import { ClientToServerEvents, ServerToClientEvents } from '../shared/types'
 import { Orb } from '../shared/orb'
 import { Player } from '../shared/player'
+import { z } from 'zod'
+import { useForm, SubmitHandler } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 
 const STARTING_ANGLE = 0
 const ENDING_ANGLE = 2 * Math.PI
 
+export const usernameFormSchema = z.object({
+  username: z.string().min(3).max(20),
+})
+
+export type UsernameForm = z.infer<typeof usernameFormSchema>
+
 const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io('http://localhost:3000/')
 
 export const App = () => {
+  const [isUsernameModalOpen, setIsUsernameModalOpen] = useState(true)
+  const { register, handleSubmit, formState } = useForm<UsernameForm>({
+    resolver: zodResolver(usernameFormSchema),
+    defaultValues: {
+      username: faker.person.firstName(),
+    },
+  })
+
+  const onSubmit: SubmitHandler<UsernameForm> = (data) => {
+    setIsUsernameModalOpen(false)
+    console.log(data)
+  }
+
   const animationFrameRef = useRef<number | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const playerRef = useRef<Player | null>(null)
   const orbsRef = useRef<Orb[]>([])
-  const [username, setUsername] = useState(faker.person.firstName())
-  const [isUsernameModalOpen, setIsUsernameModalOpen] = useState(true)
-  const [isGameActionModalOpen, setIsGameActionModalOpen] = useState(false)
 
   const draw = () => {
     if (canvasRef.current === null || canvasRef.current === undefined) {
@@ -106,6 +124,7 @@ export const App = () => {
     })
 
     socket.on('tick', (players) => {
+      const username = 'todo'
       const player = players.find((player) => player.state.data.name === username)
       if (player === undefined) {
         console.log(`player with username: ${username} not found`)
@@ -187,81 +206,52 @@ export const App = () => {
         width={window.innerWidth}
         height={window.innerHeight}
       ></canvas>
-      <Dialog open={isUsernameModalOpen}>
-        <DialogTitle>Agar Clone</DialogTitle>
-        <DialogContent dividers>
-          <Button
-            onClick={() => {
-              console.log('login with github')
-            }}
-            variant="contained"
-            fullWidth
-            style={{ marginBottom: '10px' }}
-          >
-            Login with github
-          </Button>
-          <Button
-            onClick={() => {
-              setIsUsernameModalOpen(false)
-              setIsGameActionModalOpen(true)
-            }}
-            variant="contained"
-            color="secondary"
-            fullWidth
-            style={{ marginBottom: '10px' }}
-          >
-            Play as guest
-          </Button>
-          <TextField
-            autoFocus
-            margin="dense"
-            id="name"
-            label="Guest name"
-            type="text"
-            fullWidth
-            variant="outlined"
-            defaultValue={username}
-            style={{ marginBottom: '10px' }}
-            onChange={(event) => {
-              setUsername(event.currentTarget.value)
-            }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <HowToPlay />
-        </DialogActions>
-      </Dialog>
 
-      <Dialog open={isGameActionModalOpen}>
-        <DialogTitle>Agar Clone</DialogTitle>
+      <Dialog open={isUsernameModalOpen}>
+        <DialogTitle>Definitely not agar.io</DialogTitle>
         <DialogContent dividers>
-          <DialogContentText sx={{ marginBottom: 2 }} variant="h4">
-            Hello, {username}!
-          </DialogContentText>
-          <Button variant="contained" color="success" fullWidth style={{ marginBottom: '10px' }}>
-            Join a Team!
-          </Button>
-          <Button
-            onClick={() => {
-              setIsGameActionModalOpen(false)
-              socket.emit('initClient', username)
-            }}
-            variant="contained"
-            color="primary"
-            fullWidth
-            style={{ marginBottom: '10px' }}
-          >
-            Play Solo!
-          </Button>
-          <Button variant="contained" color="secondary" fullWidth style={{ marginBottom: '10px' }}>
-            See your stats
-          </Button>
-          <Button variant="contained" color="error" fullWidth style={{ marginBottom: '10px' }}>
-            See all stats
-          </Button>
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <TextField
+              error={formState.errors.username !== undefined}
+              autoFocus
+              margin="dense"
+              label="Username"
+              type="text"
+              fullWidth
+              variant="outlined"
+              style={{ marginBottom: '10px' }}
+              helperText={formState.errors.username?.message}
+              {...register('username')}
+            />
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              fullWidth
+              style={{ marginBottom: '10px' }}
+            >
+              Play
+            </Button>
+          </form>
         </DialogContent>
         <DialogActions>
-          <HowToPlay />
+          <ul>
+            <DialogContentText component="li">
+              Move your mouse on the screen to move your character.
+            </DialogContentText>
+            <DialogContentText component="li">
+              Absorb orbs by running over them in order to grow your character.
+            </DialogContentText>
+            <DialogContentText component="li">
+              The larger you get the slower you are.
+            </DialogContentText>
+            <DialogContentText component="li">
+              Objective: Absorb other players to get even larger but not lose speed.
+            </DialogContentText>
+            <DialogContentText component="li">
+              The larger player absorbs the smaller player.
+            </DialogContentText>
+          </ul>
         </DialogActions>
       </Dialog>
     </>
