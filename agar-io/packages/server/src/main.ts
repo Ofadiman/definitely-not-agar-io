@@ -1,6 +1,6 @@
 import fastify from 'fastify'
 import fastifyIO from 'fastify-socket.io'
-import { Game, Orb, createOrb, createPlayer, fps, loop } from 'shared'
+import { Game, Orb, Player, createOrb, createPlayer, fps, loop } from 'shared'
 import { Server } from 'socket.io'
 import {
   GAME_SETTINGS,
@@ -10,6 +10,7 @@ import {
   SocketData,
 } from 'shared'
 import { checkForOrbCollisions, checkForPlayerCollisions } from './collisions'
+import { faker } from '@faker-js/faker'
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -24,6 +25,19 @@ const createInitialOrbs = (orbsCount: number): Record<string, Orb> => {
     orbs[orb.id] = orb
   }
   return orbs
+}
+
+const createBots = (playersCount: number): Record<string, Player> => {
+  const bots: Record<string, Player> = {}
+  for (let i = 0; i < playersCount; i++) {
+    const bot = createPlayer({
+      isBot: true,
+      socketId: faker.string.uuid(),
+      name: `bot: ${faker.person.firstName()}`,
+    })
+    bots[bot.socketId] = bot
+  }
+  return bots
 }
 
 const server = fastify({
@@ -48,6 +62,13 @@ const game: Game = {
 
 let cancelGameLoop: () => void
 
+type MoveTo = {
+  x: number
+  y: number
+}
+
+const botActions: Record<string, MoveTo> = {}
+
 server.ready().then(() => {
   server.io.on('connect', (socket) => {
     socket.join('game')
@@ -57,12 +78,92 @@ server.ready().then(() => {
         cancelGameLoop = loop({
           fps: GAME_SETTINGS.FPS,
           callback: () => {
+            Object.values(game.players).forEach((player) => {
+              if (player.isBot === false) {
+                return
+              }
+
+              const consumedOrbId = checkForOrbCollisions(player, game.orbs)
+              if (consumedOrbId !== null) {
+                delete game.orbs[consumedOrbId]
+
+                const newOrb = createOrb()
+
+                game.orbs[newOrb.id] = newOrb
+
+                server.io.to('game').emit('orbConsumed', { consumedOrbId, newOrb })
+              }
+
+              const consumedPlayerId = checkForPlayerCollisions(player, game.players)
+              if (consumedPlayerId) {
+                const consumedPlayer = game.players[consumedPlayerId]
+                if (!consumedPlayer) {
+                  return
+                }
+
+                if (consumedPlayer.isBot) {
+                  delete game.players[consumedPlayerId]
+                  delete botActions[consumedPlayerId]
+
+                  const newBot = createPlayer({
+                    isBot: true,
+                    socketId: faker.string.uuid(),
+                    name: `bot: ${faker.person.firstName()}`,
+                  })
+                  const newBotAction: MoveTo = {
+                    x: faker.number.int({ min: 0, max: GAME_SETTINGS.MAP_WIDTH }),
+                    y: faker.number.int({ min: 0, max: GAME_SETTINGS.MAP_HEIGHT }),
+                  }
+
+                  game.players[newBot.socketId] = newBot
+                  botActions[newBot.socketId] = newBotAction
+                } else {
+                  consumedPlayer.isAlive = false
+                }
+
+                server.io
+                  .to('game')
+                  .emit('playerConsumed', { consumedById: player.socketId, consumedPlayerId })
+              }
+
+              const moveTo = botActions[player.socketId]
+              if (!moveTo) {
+                return
+              }
+
+              const distX = moveTo.x - player.location.x
+              const distY = moveTo.y - player.location.y
+              const distance = Math.sqrt(distX * distX + distY * distY)
+              // 2 is arbitrary number here because I can't figure out what it should be.
+              if (distance <= 2) {
+                player.location.x = moveTo.x
+                player.location.y = moveTo.y
+                botActions[player.socketId] = {
+                  x: faker.number.int({ min: 0, max: GAME_SETTINGS.MAP_WIDTH }),
+                  y: faker.number.int({ min: 0, max: GAME_SETTINGS.MAP_HEIGHT }),
+                }
+              } else {
+                const factor = player.speed / distance
+                player.location.x = player.location.x + factor * distX
+                player.location.y = player.location.y + factor * distY
+              }
+            })
+
             server.io.to('game').emit('tick', game.players)
           },
         })
+
+        const bots = createBots(50)
+        game.players = bots
+        Object.values(bots).forEach((bot) => {
+          botActions[bot.socketId] = {
+            x: faker.number.int({ min: 0, max: GAME_SETTINGS.MAP_WIDTH }),
+            y: faker.number.int({ min: 0, max: GAME_SETTINGS.MAP_HEIGHT }),
+          }
+        })
       }
 
-      game.players[socket.id] = createPlayer({ socketId: socket.id, name: data.name })
+      game.players[socket.id] = createPlayer({ socketId: socket.id, name: data.name, isBot: false })
 
       socket.emit('gameState', game)
     })
@@ -128,7 +229,9 @@ server.ready().then(() => {
       delete game.players[socket.id]
 
       if (Object.keys(game.players).length === 0 && cancelGameLoop !== null) {
-        cancelGameLoop()
+        if (cancelGameLoop) {
+          cancelGameLoop()
+        }
       }
     })
   })

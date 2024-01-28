@@ -4,7 +4,7 @@ import { z } from 'zod'
 export const GAME_SETTINGS = {
   DEFAULT_NUMBER_OF_ORBS: 2000,
   DEFAULT_PLAYER_SIZE: 10,
-  DEFAULT_PLAYER_SPEED: 2,
+  DEFAULT_PLAYER_SPEED: 4,
   DEFAULT_PLAYER_ZOOM: 1.5,
   DEFAULT_PLAYER_SCORE: 0,
   MAP_HEIGHT: 5000,
@@ -42,6 +42,7 @@ export type Player = {
   socketId: string
   name: string
   isAlive: boolean
+  isBot: boolean
   speed: number
   zoom: number
   color: string
@@ -54,7 +55,7 @@ export type Player = {
   }
 } & Collideable
 
-export const createPlayer = (data: { name: string; socketId: string }): Player => {
+export const createPlayer = (data: { name: string; socketId: string; isBot: boolean }): Player => {
   return {
     color: faker.color.human(),
     size: GAME_SETTINGS.DEFAULT_PLAYER_SIZE,
@@ -71,6 +72,7 @@ export const createPlayer = (data: { name: string; socketId: string }): Player =
       y: 0,
     },
     isAlive: true,
+    isBot: data.isBot,
     socketId: data.socketId,
     absorbedOrbsCount: 0,
     absorbedPlayersCount: 0,
