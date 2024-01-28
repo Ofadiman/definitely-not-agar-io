@@ -20,6 +20,7 @@ import {
 import { useForm, SubmitHandler } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ENDING_ANGLE, STARTING_ANGLE, drawCenter, drawGrid, drawPosition } from './canvas-utils'
+import { v4 } from 'uuid'
 
 const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io('http://localhost:3000/')
 
@@ -112,17 +113,13 @@ export const App = () => {
     socket.connect()
 
     socket.on('connect', () => {
-      console.log(`socket connected, socket.id: ${socket.id}`)
-
       // TODO: this code automatically joins a game and should be deleted later
-      console.log(`joining game as ${getValues().name}`)
       socket.emit('joinGame', { name: getValues().name })
       setIsUsernameModalOpen(false)
     })
 
     socket.on('gameState', (data) => {
       gameRef.current = data
-      console.log('current game state', data)
 
       const interval = setInterval(() => {
         if (gameRef.current === null) {
@@ -152,7 +149,6 @@ export const App = () => {
         return
       }
 
-      console.log('players', players)
       gameRef.current.players = players
     })
 
@@ -175,21 +171,21 @@ export const App = () => {
         setNotifications((prev) => {
           return {
             ...prev,
-            [`${Math.random()}`]: `You have been consumed by ${data.consumedById} player!`,
+            [v4()]: `You have been consumed by ${data.consumedById} player!`,
           }
         })
       } else if (data.consumedById === socket.id) {
         setNotifications((prev) => {
           return {
             ...prev,
-            [`${Math.random()}`]: `You have consumed ${data.consumedPlayerId} player!`,
+            [v4()]: `You have consumed ${data.consumedPlayerId} player!`,
           }
         })
       } else {
         setNotifications((prev) => {
           return {
             ...prev,
-            [`${Math.random()}`]: `Player ${data.consumedPlayerId} was consumed by player ${data.consumedById}!`,
+            [v4()]: `Player ${data.consumedPlayerId} was consumed by player ${data.consumedById}!`,
           }
         })
       }
@@ -327,12 +323,12 @@ export const App = () => {
             onClose={() => {
               setNotifications((prev) => {
                 const copy = { ...prev }
-                delete prev[id]
+                delete copy[id]
                 return copy
               })
             }}
             message={text}
-            autoHideDuration={5000}
+            autoHideDuration={3000}
           />
         )
       })}
