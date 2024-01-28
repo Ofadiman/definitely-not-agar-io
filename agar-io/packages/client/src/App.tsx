@@ -7,7 +7,6 @@ import Button from '@mui/material/Button'
 import TextField from '@mui/material/TextField'
 import { faker } from '@faker-js/faker'
 import { DialogActions, Snackbar } from '@mui/material'
-import { grey } from '@mui/material/colors'
 import { Socket, io } from 'socket.io-client'
 import {
   Player,
@@ -19,7 +18,7 @@ import {
 } from 'shared'
 import { useForm, SubmitHandler } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ENDING_ANGLE, STARTING_ANGLE, drawCenter, drawGrid, drawPosition } from './canvas-utils'
+import { draw } from './draw'
 import { v4 } from 'uuid'
 
 const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io('http://localhost:3000/')
@@ -43,7 +42,7 @@ export const App = () => {
     socket.emit('joinGame', { name: data.name })
   }
 
-  const draw = useCallback(() => {
+  const loop = useCallback(() => {
     if (canvasRef.current === null) {
       console.error('canvasRef.current is null in draw()')
       return
@@ -77,36 +76,22 @@ export const App = () => {
       -player.location.y + canvasRef.current.height / 2,
     )
 
-    drawGrid(context)
-    drawCenter(context)
-    drawPosition(context, player.location)
+    draw.grid(context)
 
     Object.values(gameRef.current.players).forEach((player) => {
       if (player.isAlive === false) {
         return
       }
 
-      context.beginPath()
-      context.arc(player.location.x, player.location.y, player.size, STARTING_ANGLE, ENDING_ANGLE)
-      context.fillStyle = player.color
-      context.fill()
-
-      context.strokeStyle = grey[300]
-      context.lineWidth = 1
-      context.stroke()
-
-      context.closePath()
+      draw.player(context, player)
+      draw.position(context, player.location)
     })
 
     Object.values(gameRef.current.orbs).forEach((orb) => {
-      context.beginPath()
-      context.arc(orb.location.x, orb.location.y, orb.size, STARTING_ANGLE, ENDING_ANGLE)
-      context.fillStyle = orb.color
-      context.fill()
-      context.closePath()
+      draw.orb(context, orb)
     })
 
-    animationFrameRef.current = requestAnimationFrame(draw)
+    animationFrameRef.current = requestAnimationFrame(loop)
   }, [])
 
   useEffect(() => {
@@ -141,7 +126,7 @@ export const App = () => {
 
       gameIntervalIdRef.current = interval as any as number
 
-      draw()
+      loop()
     })
 
     socket.on('tick', (players) => {
