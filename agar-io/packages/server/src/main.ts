@@ -70,6 +70,10 @@ server.ready().then(() => {
         return
       }
 
+      if (player.isAlive === false) {
+        return
+      }
+
       player.vector.x = vector.x
       player.vector.y = vector.y
 
@@ -101,8 +105,19 @@ server.ready().then(() => {
       const consumedPlayerId = checkForPlayerCollisions(player, game.players)
 
       if (consumedPlayerId) {
-        server.io.to('game').emit('playerConsumed', { consumedById: player.id, consumedPlayerId })
-        delete game.players[consumedPlayerId]
+        const consumedPlayer = game.players[consumedPlayerId]
+        if (!consumedPlayer) {
+          return
+        }
+
+        if (consumedPlayer.isAlive === false) {
+          return
+        }
+
+        consumedPlayer.isAlive = false
+        server.io
+          .to('game')
+          .emit('playerConsumed', { consumedById: player.socketId, consumedPlayerId })
       }
     })
 

@@ -81,6 +81,10 @@ export const App = () => {
     drawPosition(context, player.location)
 
     Object.values(gameRef.current.players).forEach((player) => {
+      if (player.isAlive === false) {
+        return
+      }
+
       context.beginPath()
       context.arc(player.location.x, player.location.y, player.size, STARTING_ANGLE, ENDING_ANGLE)
       context.fillStyle = player.color
@@ -163,6 +167,10 @@ export const App = () => {
     })
 
     socket.on('playerConsumed', (data) => {
+      if (!gameRef.current) {
+        return
+      }
+
       if (data.consumedPlayerId === socket.id) {
         setNotifications((prev) => {
           return {
@@ -185,6 +193,8 @@ export const App = () => {
           }
         })
       }
+
+      gameRef.current.players[data.consumedPlayerId].isAlive = false
     })
 
     return () => {
