@@ -6,7 +6,7 @@ import DialogContentText from '@mui/material/DialogContentText'
 import Button from '@mui/material/Button'
 import TextField from '@mui/material/TextField'
 import { faker } from '@faker-js/faker'
-import { DialogActions } from '@mui/material'
+import { DialogActions, Snackbar } from '@mui/material'
 import { grey } from '@mui/material/colors'
 import { Socket, io } from 'socket.io-client'
 import {
@@ -24,6 +24,7 @@ import { ENDING_ANGLE, STARTING_ANGLE, drawCenter, drawGrid, drawPosition } from
 const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io('http://localhost:3000/')
 
 export const App = () => {
+  const [notifications, setNotifications] = useState<Record<string, string>>({})
   const gameRef = useRef<Game | null>(null)
   const gameIntervalIdRef = useRef<number | null>(null)
   const [isUsernameModalOpen, setIsUsernameModalOpen] = useState(true)
@@ -161,6 +162,31 @@ export const App = () => {
       gameRef.current.orbs[data.newOrb.id] = data.newOrb
     })
 
+    socket.on('playerConsumed', (data) => {
+      if (data.consumedPlayerId === socket.id) {
+        setNotifications((prev) => {
+          return {
+            ...prev,
+            [`${Math.random()}`]: `You have been consumed by ${data.consumedById} player!`,
+          }
+        })
+      } else if (data.consumedById === socket.id) {
+        setNotifications((prev) => {
+          return {
+            ...prev,
+            [`${Math.random()}`]: `You have consumed ${data.consumedPlayerId} player!`,
+          }
+        })
+      } else {
+        setNotifications((prev) => {
+          return {
+            ...prev,
+            [`${Math.random()}`]: `Player ${data.consumedPlayerId} was consumed by player ${data.consumedById}!`,
+          }
+        })
+      }
+    })
+
     return () => {
       socket.disconnect()
 
@@ -281,6 +307,25 @@ export const App = () => {
           </ul>
         </DialogActions>
       </Dialog>
+
+      {Object.entries(notifications).map(([id, text]) => {
+        return (
+          <Snackbar
+            key={id}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            open={notifications[id] !== undefined}
+            onClose={() => {
+              setNotifications((prev) => {
+                const copy = { ...prev }
+                delete prev[id]
+                return copy
+              })
+            }}
+            message={text}
+            autoHideDuration={5000}
+          />
+        )
+      })}
     </>
   )
 }
