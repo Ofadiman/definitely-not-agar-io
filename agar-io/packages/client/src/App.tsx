@@ -10,7 +10,6 @@ import { DialogActions } from '@mui/material'
 import { grey } from '@mui/material/colors'
 import { Socket, io } from 'socket.io-client'
 import {
-  Orb,
   Player,
   ClientToServerEvents,
   ServerToClientEvents,
@@ -20,9 +19,7 @@ import {
 } from 'shared'
 import { useForm, SubmitHandler } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-
-const STARTING_ANGLE = 0
-const ENDING_ANGLE = 2 * Math.PI
+import { ENDING_ANGLE, STARTING_ANGLE, drawCenter, drawGrid, drawPosition } from './canvas-utils'
 
 const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io('http://localhost:3000/')
 
@@ -78,9 +75,9 @@ export const App = () => {
       -player.location.y + canvasRef.current.height / 2,
     )
 
-    // context.strokeStyle = 'red'
-    // context.lineWidth = 4
-    // context.strokeRect(0, 0, 20, 20)
+    drawGrid(context)
+    drawCenter(context)
+    drawPosition(context, player.location)
 
     Object.values(gameRef.current.players).forEach((player) => {
       context.beginPath()
@@ -229,7 +226,6 @@ export const App = () => {
         }}
         ref={canvasRef}
         style={{
-          background: 'black',
           display: 'block',
           width: window.innerWidth,
           height: window.innerHeight,

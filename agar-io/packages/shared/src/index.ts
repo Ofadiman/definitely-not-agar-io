@@ -2,14 +2,14 @@ import { faker } from '@faker-js/faker'
 import { z } from 'zod'
 
 export const GAME_SETTINGS = {
-  DEFAULT_NUMBER_OF_ORBS: 10,
+  DEFAULT_NUMBER_OF_ORBS: 2000,
   DEFAULT_ORB_SIZE: 5,
   DEFAULT_PLAYER_SIZE: 10,
-  DEFAULT_PLAYER_SPEED: 3,
+  DEFAULT_PLAYER_SPEED: 2,
   DEFAULT_PLAYER_ZOOM: 1.5,
   DEFAULT_PLAYER_SCORE: 0,
-  MAP_HEIGHT: 500,
-  MAP_WIDTH: 500,
+  MAP_HEIGHT: 5000,
+  MAP_WIDTH: 5000,
 } as const
 
 export type Orb = {
@@ -87,8 +87,6 @@ export type ServerToClientEvents = {
   gameState: (data: Game) => void
   tick: (data: Record<string, Player>) => void
   orbConsumed: (data: { consumedOrbId: string; newOrb: Orb }) => void
-  // orbSwitch: (data: { orbIndex: number; newOrb: Orb }) => void
-  // playerAbsorbed: (data: { absorbed: string; absorbedBy: string }) => void
 }
 
 export type ClientToServerEvents = {
