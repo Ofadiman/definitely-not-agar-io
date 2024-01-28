@@ -45,6 +45,7 @@ export type Player = {
   size: number
   score: number
   absorbedOrbsCount: number
+  absorbedPlayersCount: number
   location: {
     x: number
     y: number
@@ -75,6 +76,7 @@ export const createPlayer = (data: { name: string; socketId: string }): Player =
     isAlive: true,
     socketId: data.socketId,
     absorbedOrbsCount: 0,
+    absorbedPlayersCount: 0,
   }
 }
 
@@ -87,6 +89,7 @@ export type ServerToClientEvents = {
   gameState: (data: Game) => void
   tick: (data: Record<string, Player>) => void
   orbConsumed: (data: { consumedOrbId: string; newOrb: Orb }) => void
+  playerConsumed: (data: { consumedPlayerId: string; consumedById: string }) => void
 }
 
 export type ClientToServerEvents = {

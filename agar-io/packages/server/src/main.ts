@@ -3,7 +3,6 @@ import fastifyIO from 'fastify-socket.io'
 import { Game, Orb, createOrb, createPlayer } from 'shared'
 import { Server } from 'socket.io'
 import {
-  Player,
   GAME_SETTINGS,
   ClientToServerEvents,
   ServerToClientEvents,
@@ -99,15 +98,12 @@ server.ready().then(() => {
         server.io.to('game').emit('orbConsumed', { consumedOrbId: orbId, newOrb })
       }
 
-      // const absorbed = checkForPlayerCollisions(
-      //   player.state.data,
-      //   player.state.config,
-      //   players,
-      //   player.state.socketId,
-      // )
-      // if (absorbed) {
-      //   server.io.to('game').emit('playerAbsorbed', absorbed)
-      // }
+      const consumedPlayerId = checkForPlayerCollisions(player, game.players)
+
+      if (consumedPlayerId) {
+        server.io.to('game').emit('playerConsumed', { consumedById: player.id, consumedPlayerId })
+        delete game.players[consumedPlayerId]
+      }
     })
 
     socket.on('disconnect', () => {
