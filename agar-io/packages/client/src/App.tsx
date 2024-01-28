@@ -15,6 +15,8 @@ import {
   PlayerForm,
   playerFormSchema,
   Game,
+  loop,
+  GAME_SETTINGS,
 } from 'shared'
 import { useForm, SubmitHandler } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -26,9 +28,9 @@ const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io('http://lo
 export const App = () => {
   const [notifications, setNotifications] = useState<Record<string, string>>({})
   const gameRef = useRef<Game | null>(null)
-  const gameIntervalIdRef = useRef<number | null>(null)
+  const cancelGameLoopRef = useRef<Function | null>(null)
   const [isUsernameModalOpen, setIsUsernameModalOpen] = useState(true)
-  const { register, handleSubmit, formState, getValues } = useForm<PlayerForm>({
+  const { register, handleSubmit, formState } = useForm<PlayerForm>({
     resolver: zodResolver(playerFormSchema),
     defaultValues: {
       name: faker.person.firstName(),
@@ -42,7 +44,7 @@ export const App = () => {
     socket.emit('joinGame', { name: data.name })
   }
 
-  const loop = useCallback(() => {
+  const drawGame = useCallback(() => {
     if (canvasRef.current === null) {
       console.error('canvasRef.current is null in draw()')
       return
@@ -91,7 +93,7 @@ export const App = () => {
       draw.orb(context, orb)
     })
 
-    animationFrameRef.current = requestAnimationFrame(loop)
+    animationFrameRef.current = requestAnimationFrame(drawGame)
   }, [])
 
   useEffect(() => {
@@ -100,27 +102,28 @@ export const App = () => {
     socket.on('gameState', (data) => {
       gameRef.current = data
 
-      const interval = setInterval(() => {
-        if (gameRef.current === null) {
-          console.error('gameRef.current is null in game loop (setInterval)')
-          return
-        }
+      cancelGameLoopRef.current = loop({
+        fps: GAME_SETTINGS.FPS,
+        callback: () => {
+          if (gameRef.current === null) {
+            console.error('gameRef.current is null in game loop (setInterval)')
+            return
+          }
 
-        const player = gameRef.current.players[socket.id]
-        if (!player) {
-          console.error('player is undefined in game loop (setInterval)')
-          return
-        }
+          const player = gameRef.current.players[socket.id]
+          if (!player) {
+            console.error('player is undefined in game loop (setInterval)')
+            return
+          }
 
-        socket.emit('tock', {
-          x: player.vector.x,
-          y: player.vector.y,
-        })
-      }, 1000 / 33)
+          socket.emit('tock', {
+            x: player.vector.x,
+            y: player.vector.y,
+          })
+        },
+      })
 
-      gameIntervalIdRef.current = interval as any as number
-
-      loop()
+      drawGame()
     })
 
     socket.on('tick', (players) => {
@@ -179,8 +182,8 @@ export const App = () => {
         cancelAnimationFrame(animationFrameRef.current)
       }
 
-      if (gameIntervalIdRef.current) {
-        clearInterval(gameIntervalIdRef.current)
+      if (cancelGameLoopRef.current) {
+        cancelGameLoopRef.current()
       }
     }
   }, [])

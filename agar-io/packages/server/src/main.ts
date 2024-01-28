@@ -1,6 +1,6 @@
 import fastify from 'fastify'
 import fastifyIO from 'fastify-socket.io'
-import { Game, Orb, createOrb, createPlayer } from 'shared'
+import { Game, Orb, createOrb, createPlayer, fps, loop } from 'shared'
 import { Server } from 'socket.io'
 import {
   GAME_SETTINGS,
@@ -26,8 +26,6 @@ const createInitialOrbs = (orbsCount: number): Record<string, Orb> => {
   return orbs
 }
 
-let intervalId: NodeJS.Timeout | null = null
-
 const server = fastify({
   logger: true,
   disableRequestLogging: true,
@@ -48,15 +46,20 @@ const game: Game = {
   orbs: createInitialOrbs(GAME_SETTINGS.DEFAULT_NUMBER_OF_ORBS),
 }
 
+let cancelGameLoop: () => void
+
 server.ready().then(() => {
   server.io.on('connect', (socket) => {
     socket.join('game')
 
     socket.on('joinGame', (data) => {
       if (Object.keys(game.players).length === 0) {
-        intervalId = setInterval(() => {
-          server.io.to('game').emit('tick', game.players)
-        }, 1000 / 30)
+        cancelGameLoop = loop({
+          fps: GAME_SETTINGS.FPS,
+          callback: () => {
+            server.io.to('game').emit('tick', game.players)
+          },
+        })
       }
 
       game.players[socket.id] = createPlayer({ socketId: socket.id, name: data.name })
@@ -124,8 +127,8 @@ server.ready().then(() => {
     socket.on('disconnect', () => {
       delete game.players[socket.id]
 
-      if (Object.keys(game.players).length === 0 && intervalId !== null) {
-        clearInterval(intervalId)
+      if (Object.keys(game.players).length === 0 && cancelGameLoop !== null) {
+        cancelGameLoop()
       }
     })
   })

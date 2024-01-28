@@ -3,13 +3,14 @@ import { z } from 'zod'
 
 export const GAME_SETTINGS = {
   DEFAULT_NUMBER_OF_ORBS: 2000,
-  DEFAULT_ORB_SIZE: 5,
   DEFAULT_PLAYER_SIZE: 10,
   DEFAULT_PLAYER_SPEED: 2,
   DEFAULT_PLAYER_ZOOM: 1.5,
   DEFAULT_PLAYER_SCORE: 0,
   MAP_HEIGHT: 5000,
   MAP_WIDTH: 5000,
+  ORB_SIZE: 5,
+  FPS: 30,
 } as const
 
 export type Collideable = {
@@ -32,7 +33,7 @@ export const createOrb = (): Orb => {
       x: faker.number.int({ min: 0, max: GAME_SETTINGS.MAP_WIDTH }),
       y: faker.number.int({ min: 0, max: GAME_SETTINGS.MAP_HEIGHT }),
     },
-    size: 5,
+    size: GAME_SETTINGS.ORB_SIZE,
     color: faker.color.human(),
   }
 }
@@ -102,3 +103,13 @@ export const playerFormSchema = z.object({
 })
 
 export type PlayerForm = z.infer<typeof playerFormSchema>
+
+export const loop = (args: { fps: number; callback: () => void }): (() => void) => {
+  const intervalId = setInterval(args.callback, 1000 / args.fps)
+
+  const cancel = () => {
+    clearInterval(intervalId)
+  }
+
+  return cancel
+}
