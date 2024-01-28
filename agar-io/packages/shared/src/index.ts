@@ -12,15 +12,18 @@ export const GAME_SETTINGS = {
   MAP_WIDTH: 5000,
 } as const
 
-export type Orb = {
-  id: string
-  color: string
+export type Collideable = {
   location: {
     x: number
     y: number
   }
   size: number
 }
+
+export type Orb = {
+  id: string
+  color: string
+} & Collideable
 
 export const createOrb = (): Orb => {
   return {
@@ -35,6 +38,7 @@ export const createOrb = (): Orb => {
 }
 
 export type Player = {
+  // TODO: Remove "id" in favour of "socketId".
   id: string
   socketId: string
   name: string
@@ -42,19 +46,14 @@ export type Player = {
   speed: number
   zoom: number
   color: string
-  size: number
   score: number
   absorbedOrbsCount: number
   absorbedPlayersCount: number
-  location: {
-    x: number
-    y: number
-  }
   vector: {
     x: number
     y: number
   }
-}
+} & Collideable
 
 export const createPlayer = (data: { name: string; socketId: string }): Player => {
   return {
