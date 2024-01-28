@@ -38,8 +38,6 @@ export const createOrb = (): Orb => {
 }
 
 export type Player = {
-  // TODO: Remove "id" in favour of "socketId".
-  id: string
   socketId: string
   name: string
   isAlive: boolean
@@ -65,7 +63,6 @@ export const createPlayer = (data: { name: string; socketId: string }): Player =
     },
     speed: GAME_SETTINGS.DEFAULT_PLAYER_SPEED,
     zoom: GAME_SETTINGS.DEFAULT_PLAYER_ZOOM,
-    id: faker.string.uuid(),
     name: data.name,
     score: GAME_SETTINGS.DEFAULT_PLAYER_SCORE,
     vector: {
