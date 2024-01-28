@@ -58,8 +58,8 @@ export const createPlayer = (data: { name: string; socketId: string }): Player =
     color: faker.color.human(),
     size: GAME_SETTINGS.DEFAULT_PLAYER_SIZE,
     location: {
-      x: 0,
-      y: 0,
+      x: faker.number.int({ min: 0, max: GAME_SETTINGS.MAP_WIDTH }),
+      y: faker.number.int({ min: 0, max: GAME_SETTINGS.MAP_HEIGHT }),
     },
     speed: GAME_SETTINGS.DEFAULT_PLAYER_SPEED,
     zoom: GAME_SETTINGS.DEFAULT_PLAYER_ZOOM,

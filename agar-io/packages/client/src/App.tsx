@@ -97,12 +97,6 @@ export const App = () => {
   useEffect(() => {
     socket.connect()
 
-    socket.on('connect', () => {
-      // TODO: this code automatically joins a game and should be deleted later
-      socket.emit('joinGame', { name: getValues().name })
-      setIsUsernameModalOpen(false)
-    })
-
     socket.on('gameState', (data) => {
       gameRef.current = data
 
