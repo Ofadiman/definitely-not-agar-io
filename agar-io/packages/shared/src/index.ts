@@ -4,13 +4,13 @@ import { z } from 'zod'
 export const GAME_SETTINGS = {
   DEFAULT_NUMBER_OF_ORBS: 2000,
   DEFAULT_PLAYER_SIZE: 10,
-  DEFAULT_PLAYER_SPEED: 4,
+  DEFAULT_PLAYER_SPEED: 2,
   DEFAULT_PLAYER_ZOOM: 1.5,
   DEFAULT_PLAYER_SCORE: 0,
   MAP_HEIGHT: 5000,
   MAP_WIDTH: 5000,
   ORB_SIZE: 5,
-  FPS: 30,
+  FPS: 60,
 } as const
 
 export type Collideable = {
