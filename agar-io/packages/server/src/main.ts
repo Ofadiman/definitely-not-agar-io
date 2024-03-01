@@ -1,6 +1,6 @@
 import fastify from 'fastify'
 import fastifyIO from 'fastify-socket.io'
-import { Game, Orb, Player, createOrb, createPlayer, loop } from 'shared'
+import { Game, Orb, Player, createOrb, createPlayer, getPlayerRadius, loop } from 'shared'
 import { Server } from 'socket.io'
 import {
   GAME_SETTINGS,
@@ -181,19 +181,35 @@ server.ready().then(() => {
       player.vector.x = vector.x
       player.vector.y = vector.y
 
-      if (
-        (player.location.x > 0 && vector.x < 0) ||
-        (player.location.x < GAME_SETTINGS.MAP_WIDTH && vector.x > 0)
-      ) {
-        player.location.x += player.speed * vector.x
+      const radius = getPlayerRadius(player)
+
+      player.location.x += player.speed * vector.x
+      if (player.location.x - radius < 0 && player.vector.x < 0) {
+        player.location.x = 0 + radius
+      }
+      if (player.location.x + radius > GAME_SETTINGS.MAP_WIDTH && player.vector.x > 0) {
+        player.location.x = GAME_SETTINGS.MAP_WIDTH - radius
       }
 
-      if (
-        (player.location.y > 0 && vector.y > 0) ||
-        (player.location.y < GAME_SETTINGS.MAP_HEIGHT && vector.y < 0)
-      ) {
-        player.location.y -= player.speed * vector.y
+      player.location.y -= player.speed * vector.y
+      if (player.location.y - radius < 0 && player.vector.y > 0) {
+        player.location.y = 0 + radius
+      } else if (player.location.y + radius > GAME_SETTINGS.MAP_HEIGHT && vector.y < 0) {
+        player.location.y = GAME_SETTINGS.MAP_HEIGHT - radius
       }
+      // if (
+      //   (player.location.x - getPlayerRadius(player) > 0 && vector.x < 0) ||
+      //   (player.location.x + getPlayerRadius(player) < GAME_SETTINGS.MAP_WIDTH && vector.x > 0)
+      // ) {
+      //   player.location.x += player.speed * vector.x
+      // }
+      //
+      // if (
+      //   (player.location.y - getPlayerRadius(player) > 0 && vector.y > 0) ||
+      //   (player.location.y + getPlayerRadius(player) < GAME_SETTINGS.MAP_HEIGHT && vector.y < 0)
+      // ) {
+      //   player.location.y -= player.speed * vector.y
+      // }
 
       const orbId = checkForOrbCollisions(player, game.orbs)
       if (orbId !== null) {

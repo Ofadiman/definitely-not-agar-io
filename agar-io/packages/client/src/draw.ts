@@ -1,4 +1,4 @@
-import { GAME_SETTINGS, Orb, Player } from 'shared'
+import { GAME_SETTINGS, Orb, Player, getPlayerRadius } from 'shared'
 import { grey } from '@mui/material/colors'
 
 export const STARTING_ANGLE = 0
@@ -72,7 +72,7 @@ const player = (context: CanvasRenderingContext2D, player: Player) => {
   context.arc(
     player.location.x,
     player.location.y,
-    player.radius + player.absorbedOrbsCount,
+    getPlayerRadius(player),
     STARTING_ANGLE,
     ENDING_ANGLE,
   )

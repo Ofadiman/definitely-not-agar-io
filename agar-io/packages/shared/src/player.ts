@@ -42,3 +42,13 @@ export const createPlayer = (data: { name: string; socketId: string; isBot: bool
     absorbedPlayersCount: 0,
   }
 }
+
+export const getPlayerRadius = (player: Player): number => {
+  const surface =
+    Math.pow(player.radius, 2) * Math.PI +
+    player.absorbedOrbsCount * Math.pow(GAME_SETTINGS.ORB_RADIUS, 2) * Math.PI
+
+  const radius = Math.sqrt(surface / Math.PI)
+
+  return radius
+}
