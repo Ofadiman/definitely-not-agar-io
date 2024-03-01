@@ -25,14 +25,8 @@ export const checkForOrbCollisions = (player: Player, orbs: Record<string, Orb>)
   const listOfOrbs = Object.values(orbs)
 
   for (const orb of listOfOrbs) {
-    if (
-      isColliding(
-        { location: player.location, radius: player.radius + player.absorbedOrbsCount },
-        orb,
-      )
-    ) {
-      player.absorbedOrbsCount++
-      player.score++
+    if (isColliding({ location: player.snapshot.location, radius: player.radius() }, orb)) {
+      player.snapshot.absorbedOrbsCount++
       return orb.id
     }
   }
@@ -46,17 +40,16 @@ export const checkForPlayerCollisions = (player: Player, otherPlayers: Record<st
   for (const otherPlayer of listOfOtherPlayers) {
     if (
       isColliding(
-        { location: player.location, radius: player.radius + player.absorbedOrbsCount },
+        { location: player.snapshot.location, radius: player.radius() },
         {
-          location: otherPlayer.location,
-          radius: otherPlayer.radius + otherPlayer.absorbedOrbsCount,
+          location: otherPlayer.snapshot.location,
+          radius: otherPlayer.radius(),
         },
       )
     ) {
-      if (player.score > otherPlayer.score) {
-        player.score += otherPlayer.score
-        player.absorbedPlayersCount += 1
-        return otherPlayer.socketId
+      if (player.snapshot.absorbedOrbsCount > otherPlayer.snapshot.absorbedOrbsCount) {
+        player.snapshot.absorbedOrbsCount += otherPlayer.snapshot.absorbedOrbsCount
+        return otherPlayer.snapshot.socketId
       }
     }
   }

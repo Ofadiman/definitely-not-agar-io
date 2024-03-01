@@ -1,6 +1,6 @@
 import fastify from 'fastify'
 import fastifyIO from 'fastify-socket.io'
-import { Game, Orb, Player, createOrb, createPlayer, getPlayerRadius, loop } from 'shared'
+import { Game, Orb, Player, createOrb, loop } from 'shared'
 import { Server } from 'socket.io'
 import {
   GAME_SETTINGS,
@@ -11,6 +11,7 @@ import {
 } from 'shared'
 import { checkForOrbCollisions, checkForPlayerCollisions } from './collisions'
 import { faker } from '@faker-js/faker'
+import { D } from '@mobily/ts-belt'
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -30,12 +31,12 @@ const createInitialOrbs = (orbsCount: number): Record<string, Orb> => {
 const createBots = (playersCount: number): Record<string, Player> => {
   const bots: Record<string, Player> = {}
   for (let i = 0; i < playersCount; i++) {
-    const bot = createPlayer({
-      isBot: true,
+    const bot = Player.new({
+      type: 'bot',
       socketId: faker.string.uuid(),
-      name: `bot: ${faker.person.firstName()}`,
+      username: `bot: ${faker.person.firstName()}`,
     })
-    bots[bot.socketId] = bot
+    bots[bot.snapshot.socketId] = bot
   }
   return bots
 }
@@ -79,7 +80,7 @@ server.ready().then(() => {
           fps: GAME_SETTINGS.FPS,
           callback: () => {
             Object.values(game.players).forEach((player) => {
-              if (player.isBot === false) {
+              if (player.isHuman()) {
                 return
               }
 
@@ -101,71 +102,77 @@ server.ready().then(() => {
                   return
                 }
 
-                if (consumedPlayer.isBot) {
+                if (consumedPlayer.isBot()) {
                   delete game.players[consumedPlayerId]
                   delete botActions[consumedPlayerId]
 
-                  const newBot = createPlayer({
-                    isBot: true,
+                  const newBot = Player.new({
+                    type: 'bot',
                     socketId: faker.string.uuid(),
-                    name: `bot: ${faker.person.firstName()}`,
+                    username: `bot: ${faker.person.firstName()}`,
                   })
                   const newBotAction: MoveTo = {
                     x: faker.number.int({ min: 0, max: GAME_SETTINGS.MAP_WIDTH }),
                     y: faker.number.int({ min: 0, max: GAME_SETTINGS.MAP_HEIGHT }),
                   }
 
-                  game.players[newBot.socketId] = newBot
-                  botActions[newBot.socketId] = newBotAction
-                } else {
-                  consumedPlayer.isAlive = false
+                  game.players[newBot.snapshot.socketId] = newBot
+                  botActions[newBot.snapshot.socketId] = newBotAction
                 }
 
-                server.io
-                  .to('game')
-                  .emit('consume_player', { consumedById: player.socketId, consumedPlayerId })
+                server.io.to('game').emit('consume_player', {
+                  consumedById: player.snapshot.socketId,
+                  consumedPlayerId,
+                })
               }
 
-              const moveTo = botActions[player.socketId]
+              const moveTo = botActions[player.snapshot.socketId]
               if (!moveTo) {
                 return
               }
 
-              const distX = moveTo.x - player.location.x
-              const distY = moveTo.y - player.location.y
+              const distX = moveTo.x - player.snapshot.location.x
+              const distY = moveTo.y - player.snapshot.location.y
               const distance = Math.sqrt(distX * distX + distY * distY)
-              // 2 is arbitrary number here because I can't figure out what it should be.
+              // If bot is close to its target location update its target location to ensure smooth movement.
               if (distance <= 2) {
-                player.location.x = moveTo.x
-                player.location.y = moveTo.y
-                botActions[player.socketId] = {
+                player.snapshot.location.x = moveTo.x
+                player.snapshot.location.y = moveTo.y
+                botActions[player.snapshot.socketId] = {
                   x: faker.number.int({ min: 0, max: GAME_SETTINGS.MAP_WIDTH }),
                   y: faker.number.int({ min: 0, max: GAME_SETTINGS.MAP_HEIGHT }),
                 }
               } else {
-                const factor = player.speed / distance
-                player.location.x = player.location.x + factor * distX
-                player.location.y = player.location.y + factor * distY
+                const factor = GAME_SETTINGS.DEFAULT_PLAYER_SPEED / distance
+                player.snapshot.location.x = player.snapshot.location.x + factor * distX
+                player.snapshot.location.y = player.snapshot.location.y + factor * distY
               }
             })
 
-            server.io.to('game').emit('game_tick', game.players)
+            server.io.to('game').emit('game_tick', D.map(game.players, Player.toSnapshot))
           },
         })
 
         const bots = createBots(GAME_SETTINGS.DEFAULT_NUMBER_OF_BOT_PLAYERS)
         game.players = bots
         Object.values(bots).forEach((bot) => {
-          botActions[bot.socketId] = {
+          botActions[bot.snapshot.socketId] = {
             x: faker.number.int({ min: 0, max: GAME_SETTINGS.MAP_WIDTH }),
             y: faker.number.int({ min: 0, max: GAME_SETTINGS.MAP_HEIGHT }),
           }
         })
       }
 
-      game.players[socket.id] = createPlayer({ socketId: socket.id, name: data.name, isBot: false })
+      game.players[socket.id] = Player.new({
+        socketId: socket.id,
+        username: data.name,
+        type: 'human',
+      })
 
-      socket.emit('game_state', game)
+      socket.emit('game_state', {
+        orbs: game.orbs,
+        players: D.map(game.players, Player.toSnapshot),
+      })
     })
 
     socket.on('update_player_vector', (vector) => {
@@ -174,32 +181,31 @@ server.ready().then(() => {
         return
       }
 
-      if (player.isAlive === false) {
-        return
+      player.snapshot.vector.x = vector.x
+      player.snapshot.vector.y = vector.y
+
+      const radius = player.radius()
+
+      player.snapshot.location.x += GAME_SETTINGS.DEFAULT_PLAYER_SPEED * vector.x
+      if (player.snapshot.location.x - radius < 0 && player.snapshot.vector.x < 0) {
+        player.snapshot.location.x = 0 + radius
+      }
+      if (
+        player.snapshot.location.x + radius > GAME_SETTINGS.MAP_WIDTH &&
+        player.snapshot.vector.x > 0
+      ) {
+        player.snapshot.location.x = GAME_SETTINGS.MAP_WIDTH - radius
       }
 
-      player.vector.x = vector.x
-      player.vector.y = vector.y
-
-      const radius = getPlayerRadius(player)
-
-      player.location.x += player.speed * vector.x
-      if (player.location.x - radius < 0 && player.vector.x < 0) {
-        player.location.x = 0 + radius
-      }
-      if (player.location.x + radius > GAME_SETTINGS.MAP_WIDTH && player.vector.x > 0) {
-        player.location.x = GAME_SETTINGS.MAP_WIDTH - radius
-      }
-
-      player.location.y -= player.speed * vector.y
-      if (player.location.y - radius < 0 && player.vector.y > 0) {
-        player.location.y = 0 + radius
-      } else if (player.location.y + radius > GAME_SETTINGS.MAP_HEIGHT && vector.y < 0) {
-        player.location.y = GAME_SETTINGS.MAP_HEIGHT - radius
+      player.snapshot.location.y -= GAME_SETTINGS.DEFAULT_PLAYER_SPEED * vector.y
+      if (player.snapshot.location.y - radius < 0 && player.snapshot.vector.y > 0) {
+        player.snapshot.location.y = 0 + radius
+      } else if (player.snapshot.location.y + radius > GAME_SETTINGS.MAP_HEIGHT && vector.y < 0) {
+        player.snapshot.location.y = GAME_SETTINGS.MAP_HEIGHT - radius
       }
 
       const orbId = checkForOrbCollisions(player, game.orbs)
-      if (orbId !== null) {
+      if (orbId) {
         delete game.orbs[orbId]
 
         const newOrb = createOrb()
@@ -210,21 +216,12 @@ server.ready().then(() => {
       }
 
       const consumedPlayerId = checkForPlayerCollisions(player, game.players)
-
       if (consumedPlayerId) {
-        const consumedPlayer = game.players[consumedPlayerId]
-        if (!consumedPlayer) {
-          return
-        }
+        delete game.players[consumedPlayerId]
 
-        if (consumedPlayer.isAlive === false) {
-          return
-        }
-
-        consumedPlayer.isAlive = false
         server.io
           .to('game')
-          .emit('consume_player', { consumedById: player.socketId, consumedPlayerId })
+          .emit('consume_player', { consumedById: player.snapshot.socketId, consumedPlayerId })
       }
     })
 

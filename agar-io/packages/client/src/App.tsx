@@ -9,7 +9,6 @@ import { faker } from '@faker-js/faker'
 import { DialogActions, Snackbar } from '@mui/material'
 import { Socket, io } from 'socket.io-client'
 import {
-  Player,
   ClientToServerEvents,
   ServerToClientEvents,
   PlayerForm,
@@ -17,11 +16,14 @@ import {
   Game,
   loop,
   GAME_SETTINGS,
+  PlayerSnapshot,
+  Player,
 } from 'shared'
 import { useForm, SubmitHandler } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { draw } from './draw'
 import { v4 } from 'uuid'
+import { D } from '@mobily/ts-belt'
 
 const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io('http://localhost:3000/', {
   autoConnect: false,
@@ -76,21 +78,17 @@ export const App = () => {
     context.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
 
     context.translate(
-      -player.location.x + canvasRef.current.width / 2,
-      -player.location.y + canvasRef.current.height / 2,
+      -player.snapshot.location.x + canvasRef.current.width / 2,
+      -player.snapshot.location.y + canvasRef.current.height / 2,
     )
 
     draw.grid(context)
 
     Object.values(gameRef.current.players).forEach((player) => {
-      if (player.isAlive === false) {
-        return
-      }
-
       draw.player(context, player)
       draw.position(context, {
-        radius: player.radius + player.absorbedOrbsCount,
-        ...player.location,
+        radius: player.radius(),
+        ...player.snapshot.location,
       })
     })
 
@@ -105,7 +103,10 @@ export const App = () => {
     socket.connect()
 
     socket.on('game_state', (data) => {
-      gameRef.current = data
+      gameRef.current = {
+        orbs: data.orbs,
+        players: D.map(data.players, (snapshot) => Player.fromSnapshot(snapshot)),
+      }
 
       cancelGameLoopRef.current = loop({
         fps: GAME_SETTINGS.FPS,
@@ -122,8 +123,8 @@ export const App = () => {
           }
 
           socket.emit('update_player_vector', {
-            x: player.vector.x,
-            y: player.vector.y,
+            x: player.snapshot.vector.x,
+            y: player.snapshot.vector.y,
           })
         },
       })
@@ -136,7 +137,7 @@ export const App = () => {
         return
       }
 
-      gameRef.current.players = players
+      gameRef.current.players = D.map(players, Player.fromSnapshot)
     })
 
     socket.on('consume_orb', (data) => {
@@ -176,8 +177,6 @@ export const App = () => {
           }
         })
       }
-
-      gameRef.current.players[data.consumedPlayerId].isAlive = false
     })
 
     return () => {
@@ -217,7 +216,7 @@ export const App = () => {
               180) /
             Math.PI
 
-          const vector: Player['vector'] = {
+          const vector: PlayerSnapshot['vector'] = {
             x: 0,
             y: 0,
           }
@@ -241,7 +240,7 @@ export const App = () => {
             return
           }
 
-          player.vector = vector
+          player.snapshot.vector = vector
         }}
         ref={canvasRef}
         style={{

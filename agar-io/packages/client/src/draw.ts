@@ -1,4 +1,4 @@
-import { GAME_SETTINGS, Orb, Player, getPlayerRadius } from 'shared'
+import { GAME_SETTINGS, Orb, Player } from 'shared'
 import { grey } from '@mui/material/colors'
 
 export const STARTING_ANGLE = 0
@@ -8,7 +8,6 @@ const position = (
   context: CanvasRenderingContext2D,
   position: { x: number; y: number; radius: number },
 ) => {
-  console.log('Math.round(position.size / 2)', Math.round(position.radius / 2))
   context.save()
 
   const fontSize = 20
@@ -66,17 +65,20 @@ export const center = (context: CanvasRenderingContext2D) => {
 }
 
 const player = (context: CanvasRenderingContext2D, player: Player) => {
+  if (player instanceof Player === false) {
+    console.log(player)
+  }
   context.save()
 
   context.beginPath()
   context.arc(
-    player.location.x,
-    player.location.y,
-    getPlayerRadius(player),
+    player.snapshot.location.x,
+    player.snapshot.location.y,
+    player.radius(),
     STARTING_ANGLE,
     ENDING_ANGLE,
   )
-  context.fillStyle = player.color
+  context.fillStyle = player.snapshot.color
   context.fill()
 
   context.strokeStyle = grey[400]
