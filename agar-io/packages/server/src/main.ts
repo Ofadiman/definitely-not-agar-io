@@ -73,7 +73,7 @@ server.ready().then(() => {
   server.io.on('connect', (socket) => {
     socket.join('game')
 
-    socket.on('joinGame', (data) => {
+    socket.on('join_game', (data) => {
       if (Object.keys(game.players).length === 0) {
         cancelGameLoop = loop({
           fps: GAME_SETTINGS.FPS,
@@ -91,7 +91,7 @@ server.ready().then(() => {
 
                 game.orbs[newOrb.id] = newOrb
 
-                server.io.to('game').emit('orbConsumed', { consumedOrbId, newOrb })
+                server.io.to('game').emit('consume_orb', { consumedOrbId, newOrb })
               }
 
               const consumedPlayerId = checkForPlayerCollisions(player, game.players)
@@ -123,7 +123,7 @@ server.ready().then(() => {
 
                 server.io
                   .to('game')
-                  .emit('playerConsumed', { consumedById: player.socketId, consumedPlayerId })
+                  .emit('consume_player', { consumedById: player.socketId, consumedPlayerId })
               }
 
               const moveTo = botActions[player.socketId]
@@ -149,7 +149,7 @@ server.ready().then(() => {
               }
             })
 
-            server.io.to('game').emit('tick', game.players)
+            server.io.to('game').emit('game_tick', game.players)
           },
         })
 
@@ -165,10 +165,10 @@ server.ready().then(() => {
 
       game.players[socket.id] = createPlayer({ socketId: socket.id, name: data.name, isBot: false })
 
-      socket.emit('gameState', game)
+      socket.emit('game_state', game)
     })
 
-    socket.on('tock', (vector) => {
+    socket.on('update_player_vector', (vector) => {
       const player = game.players[socket.id]
       if (player === undefined) {
         return
@@ -197,19 +197,6 @@ server.ready().then(() => {
       } else if (player.location.y + radius > GAME_SETTINGS.MAP_HEIGHT && vector.y < 0) {
         player.location.y = GAME_SETTINGS.MAP_HEIGHT - radius
       }
-      // if (
-      //   (player.location.x - getPlayerRadius(player) > 0 && vector.x < 0) ||
-      //   (player.location.x + getPlayerRadius(player) < GAME_SETTINGS.MAP_WIDTH && vector.x > 0)
-      // ) {
-      //   player.location.x += player.speed * vector.x
-      // }
-      //
-      // if (
-      //   (player.location.y - getPlayerRadius(player) > 0 && vector.y > 0) ||
-      //   (player.location.y + getPlayerRadius(player) < GAME_SETTINGS.MAP_HEIGHT && vector.y < 0)
-      // ) {
-      //   player.location.y -= player.speed * vector.y
-      // }
 
       const orbId = checkForOrbCollisions(player, game.orbs)
       if (orbId !== null) {
@@ -219,7 +206,7 @@ server.ready().then(() => {
 
         game.orbs[newOrb.id] = newOrb
 
-        server.io.to('game').emit('orbConsumed', { consumedOrbId: orbId, newOrb })
+        server.io.to('game').emit('consume_orb', { consumedOrbId: orbId, newOrb })
       }
 
       const consumedPlayerId = checkForPlayerCollisions(player, game.players)
@@ -237,7 +224,7 @@ server.ready().then(() => {
         consumedPlayer.isAlive = false
         server.io
           .to('game')
-          .emit('playerConsumed', { consumedById: player.socketId, consumedPlayerId })
+          .emit('consume_player', { consumedById: player.socketId, consumedPlayerId })
       }
     })
 

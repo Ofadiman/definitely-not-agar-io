@@ -43,7 +43,7 @@ export const App = () => {
 
   const onSubmit: SubmitHandler<PlayerForm> = (data) => {
     setIsUsernameModalOpen(false)
-    socket.emit('joinGame', { name: data.name })
+    socket.emit('join_game', { name: data.name })
   }
 
   const drawGame = useCallback(() => {
@@ -104,7 +104,7 @@ export const App = () => {
   useEffect(() => {
     socket.connect()
 
-    socket.on('gameState', (data) => {
+    socket.on('game_state', (data) => {
       gameRef.current = data
 
       cancelGameLoopRef.current = loop({
@@ -121,7 +121,7 @@ export const App = () => {
             return
           }
 
-          socket.emit('tock', {
+          socket.emit('update_player_vector', {
             x: player.vector.x,
             y: player.vector.y,
           })
@@ -131,7 +131,7 @@ export const App = () => {
       drawGame()
     })
 
-    socket.on('tick', (players) => {
+    socket.on('game_tick', (players) => {
       if (gameRef.current === null) {
         return
       }
@@ -139,7 +139,7 @@ export const App = () => {
       gameRef.current.players = players
     })
 
-    socket.on('orbConsumed', (data) => {
+    socket.on('consume_orb', (data) => {
       if (gameRef.current === null) {
         return
       }
@@ -149,7 +149,7 @@ export const App = () => {
       gameRef.current.orbs[data.newOrb.id] = data.newOrb
     })
 
-    socket.on('playerConsumed', (data) => {
+    socket.on('consume_player', (data) => {
       if (!gameRef.current) {
         return
       }
