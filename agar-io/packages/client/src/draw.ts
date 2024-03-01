@@ -4,14 +4,18 @@ import { grey } from '@mui/material/colors'
 export const STARTING_ANGLE = 0
 export const ENDING_ANGLE = 2 * Math.PI
 
-const position = (context: CanvasRenderingContext2D, position: { x: number; y: number }) => {
+const position = (
+  context: CanvasRenderingContext2D,
+  position: { x: number; y: number; size: number },
+) => {
+  console.log('Math.round(position.size / 2)', Math.round(position.size / 2))
   context.save()
 
   const fontSize = 20
   const text = `x: ${Math.floor(position.x)}, y: ${Math.floor(position.y)}`
   context.font = `bold ${fontSize}px Roboto`
   context.textAlign = 'center'
-  context.fillText(text, position.x, position.y - fontSize)
+  context.fillText(text, position.x, position.y - fontSize - Math.round(position.size / 2))
 
   context.restore()
 }
@@ -65,7 +69,13 @@ const player = (context: CanvasRenderingContext2D, player: Player) => {
   context.save()
 
   context.beginPath()
-  context.arc(player.location.x, player.location.y, player.size, STARTING_ANGLE, ENDING_ANGLE)
+  context.arc(
+    player.location.x,
+    player.location.y,
+    player.size + player.absorbedOrbsCount,
+    STARTING_ANGLE,
+    ENDING_ANGLE,
+  )
   context.fillStyle = player.color
   context.fill()
 

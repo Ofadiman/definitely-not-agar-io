@@ -25,7 +25,9 @@ export const checkForOrbCollisions = (player: Player, orbs: Record<string, Orb>)
   const listOfOrbs = Object.values(orbs)
 
   for (const orb of listOfOrbs) {
-    if (isColliding(player, orb)) {
+    if (
+      isColliding({ location: player.location, size: player.size + player.absorbedOrbsCount }, orb)
+    ) {
       player.absorbedOrbsCount++
       player.score++
       return orb.id
@@ -39,7 +41,12 @@ export const checkForPlayerCollisions = (player: Player, otherPlayers: Record<st
   const listOfOtherPlayers = Object.values(otherPlayers)
 
   for (const otherPlayer of listOfOtherPlayers) {
-    if (isColliding(player, otherPlayer)) {
+    if (
+      isColliding(
+        { location: player.location, size: player.size + player.absorbedOrbsCount },
+        { location: otherPlayer.location, size: otherPlayer.size + otherPlayer.absorbedOrbsCount },
+      )
+    ) {
       if (player.score > otherPlayer.score) {
         player.score += otherPlayer.score
         player.absorbedPlayersCount += 1

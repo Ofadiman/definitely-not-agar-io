@@ -23,7 +23,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { draw } from './draw'
 import { v4 } from 'uuid'
 
-const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io('http://localhost:3000/')
+const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io('http://localhost:3000/', {
+  autoConnect: false,
+})
 
 export const App = () => {
   const [notifications, setNotifications] = useState<Record<string, string>>({})
@@ -86,7 +88,7 @@ export const App = () => {
       }
 
       draw.player(context, player)
-      draw.position(context, player.location)
+      draw.position(context, { size: player.size + player.absorbedOrbsCount, ...player.location })
     })
 
     Object.values(gameRef.current.orbs).forEach((orb) => {
