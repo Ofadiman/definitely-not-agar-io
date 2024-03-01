@@ -2,6 +2,7 @@
   "name": "server",
   "version": "0.1.0",
   "scripts": {
-    "dev": "tsup"
+    "dev": "tsup",
+    "check:types": "tsc --noEmit"
   }
 }

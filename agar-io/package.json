@@ -1,7 +1,6 @@
 {
   "name": "agar-io",
   "scripts": {
-    "dev": "turbo dev",
     "format": "prettier --write ."
   },
   "dependencies": {
