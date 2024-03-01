@@ -1,6 +1,6 @@
 import fastify from 'fastify'
 import fastifyIO from 'fastify-socket.io'
-import { Game, Orb, Player, createOrb, createPlayer, fps, loop } from 'shared'
+import { Game, Orb, Player, createOrb, createPlayer, loop } from 'shared'
 import { Server } from 'socket.io'
 import {
   GAME_SETTINGS,
@@ -153,7 +153,7 @@ server.ready().then(() => {
           },
         })
 
-        const bots = createBots(50)
+        const bots = createBots(GAME_SETTINGS.DEFAULT_NUMBER_OF_BOT_PLAYERS)
         game.players = bots
         Object.values(bots).forEach((bot) => {
           botActions[bot.socketId] = {
