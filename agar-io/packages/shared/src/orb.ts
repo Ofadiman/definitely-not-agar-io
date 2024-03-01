@@ -14,7 +14,7 @@ export const createOrb = (): Orb => {
       x: faker.number.int({ min: 0, max: GAME_SETTINGS.MAP_WIDTH }),
       y: faker.number.int({ min: 0, max: GAME_SETTINGS.MAP_HEIGHT }),
     },
-    size: GAME_SETTINGS.ORB_SIZE,
+    radius: GAME_SETTINGS.ORB_RADIUS,
     color: faker.color.human(),
   }
 }

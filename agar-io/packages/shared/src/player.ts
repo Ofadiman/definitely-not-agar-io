@@ -22,7 +22,7 @@ export type Player = {
 export const createPlayer = (data: { name: string; socketId: string; isBot: boolean }): Player => {
   return {
     color: faker.color.human(),
-    size: GAME_SETTINGS.DEFAULT_PLAYER_SIZE,
+    radius: GAME_SETTINGS.DEFAULT_PLAYER_RADIUS,
     location: {
       x: faker.number.int({ min: 0, max: GAME_SETTINGS.MAP_WIDTH }),
       y: faker.number.int({ min: 0, max: GAME_SETTINGS.MAP_HEIGHT }),

@@ -3,7 +3,7 @@ export type Collideable = {
     x: number
     y: number
   }
-  size: number
+  radius: number
 }
 
 export const loop = (args: { fps: number; callback: () => void }): (() => void) => {

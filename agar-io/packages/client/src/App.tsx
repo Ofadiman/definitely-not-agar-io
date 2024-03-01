@@ -88,7 +88,10 @@ export const App = () => {
       }
 
       draw.player(context, player)
-      draw.position(context, { size: player.size + player.absorbedOrbsCount, ...player.location })
+      draw.position(context, {
+        radius: player.radius + player.absorbedOrbsCount,
+        ...player.location,
+      })
     })
 
     Object.values(gameRef.current.orbs).forEach((orb) => {

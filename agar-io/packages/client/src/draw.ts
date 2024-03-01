@@ -6,16 +6,16 @@ export const ENDING_ANGLE = 2 * Math.PI
 
 const position = (
   context: CanvasRenderingContext2D,
-  position: { x: number; y: number; size: number },
+  position: { x: number; y: number; radius: number },
 ) => {
-  console.log('Math.round(position.size / 2)', Math.round(position.size / 2))
+  console.log('Math.round(position.size / 2)', Math.round(position.radius / 2))
   context.save()
 
   const fontSize = 20
   const text = `x: ${Math.floor(position.x)}, y: ${Math.floor(position.y)}`
   context.font = `bold ${fontSize}px Roboto`
   context.textAlign = 'center'
-  context.fillText(text, position.x, position.y - fontSize - Math.round(position.size / 2))
+  context.fillText(text, position.x, position.y - fontSize - Math.round(position.radius / 2))
 
   context.restore()
 }
@@ -72,7 +72,7 @@ const player = (context: CanvasRenderingContext2D, player: Player) => {
   context.arc(
     player.location.x,
     player.location.y,
-    player.size + player.absorbedOrbsCount,
+    player.radius + player.absorbedOrbsCount,
     STARTING_ANGLE,
     ENDING_ANGLE,
   )
@@ -92,7 +92,7 @@ const orb = (context: CanvasRenderingContext2D, orb: Orb) => {
   context.save()
 
   context.beginPath()
-  context.arc(orb.location.x, orb.location.y, orb.size, STARTING_ANGLE, ENDING_ANGLE)
+  context.arc(orb.location.x, orb.location.y, orb.radius, STARTING_ANGLE, ENDING_ANGLE)
   context.fillStyle = orb.color
   context.fill()
   context.closePath()
