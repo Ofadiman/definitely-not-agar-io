@@ -1,12 +1,17 @@
-export const GAME_SETTINGS = {
-  DEFAULT_NUMBER_OF_ORBS: 2000,
-  DEFAULT_PLAYER_RADIUS: 10,
-  DEFAULT_PLAYER_SPEED: 2,
-  DEFAULT_PLAYER_ZOOM: 1.5,
-  DEFAULT_PLAYER_SCORE: 0,
-  DEFAULT_NUMBER_OF_BOT_PLAYERS: 10,
-  MAP_HEIGHT: 5000,
-  MAP_WIDTH: 5000,
-  ORB_RADIUS: 5,
-  FPS: 60,
-} as const
+import { z } from 'zod'
+
+export const gameSettingsSchema = z
+  .object({
+    INITIAL_PLAYER_RADIUS: z.coerce.number().int().gte(5).lte(25).default(10),
+    FPS: z
+      .union([z.coerce.number().min(30).max(30), z.coerce.number().min(60).max(60)])
+      .default(60),
+    MAP_HEIGHT: z.coerce.number().int().gte(500).lte(5000).default(1000),
+    MAP_WIDTH: z.coerce.number().int().gte(500).lte(5000).default(1000),
+    NUMBER_OF_BOTS: z.coerce.number().int().gte(0).lte(100).default(10),
+    NUMBER_OF_ORBS: z.coerce.number().int().gte(100).lte(5000).default(1000),
+    ORB_RADIUS: z.coerce.number().int().gte(1).lte(10).default(5),
+  })
+  .strip()
+
+export type GameSettings = z.infer<typeof gameSettingsSchema>

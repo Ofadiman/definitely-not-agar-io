@@ -15,7 +15,6 @@ import {
   playerFormSchema,
   Game,
   loop,
-  GAME_SETTINGS,
   PlayerSnapshot,
   Player,
 } from 'shared'
@@ -82,12 +81,16 @@ export const App = () => {
       -player.snapshot.location.y + canvasRef.current.height / 2,
     )
 
-    draw.grid(context)
+    draw.grid(context, gameRef.current.settings)
 
     Object.values(gameRef.current.players).forEach((player) => {
-      draw.player(context, player)
+      if (!gameRef.current) {
+        return
+      }
+
+      draw.player(context, player, gameRef.current.settings)
       draw.position(context, {
-        radius: player.radius(),
+        radius: player.radius(gameRef.current.settings),
         ...player.snapshot.location,
       })
     })
@@ -106,10 +109,11 @@ export const App = () => {
       gameRef.current = {
         orbs: data.orbs,
         players: D.map(data.players, (snapshot) => Player.fromSnapshot(snapshot)),
+        settings: data.settings,
       }
 
       cancelGameLoopRef.current = loop({
-        fps: GAME_SETTINGS.FPS,
+        fps: data.settings.FPS,
         callback: () => {
           if (gameRef.current === null) {
             console.error('gameRef.current is null in game loop (setInterval)')

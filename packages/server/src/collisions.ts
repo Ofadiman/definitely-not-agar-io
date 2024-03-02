@@ -1,4 +1,4 @@
-import { Player, Orb, Collideable } from 'shared'
+import { Player, Orb, Collideable, GameSettings } from 'shared'
 
 export const isColliding = (first: Collideable, second: Collideable): boolean => {
   // Performance optimization technique by first checking overlapping squares and then performing more complicated calculations related to overlapping circles.
@@ -21,11 +21,17 @@ export const isColliding = (first: Collideable, second: Collideable): boolean =>
   return false
 }
 
-export const checkForOrbCollisions = (player: Player, orbs: Record<string, Orb>) => {
+export const checkForOrbCollisions = (
+  player: Player,
+  orbs: Record<string, Orb>,
+  gameSettings: GameSettings,
+) => {
   const listOfOrbs = Object.values(orbs)
 
   for (const orb of listOfOrbs) {
-    if (isColliding({ location: player.snapshot.location, radius: player.radius() }, orb)) {
+    if (
+      isColliding({ location: player.snapshot.location, radius: player.radius(gameSettings) }, orb)
+    ) {
       player.snapshot.absorbedOrbsCount++
       return orb.id
     }
@@ -34,16 +40,20 @@ export const checkForOrbCollisions = (player: Player, orbs: Record<string, Orb>)
   return null
 }
 
-export const checkForPlayerCollisions = (player: Player, otherPlayers: Record<string, Player>) => {
+export const checkForPlayerCollisions = (
+  player: Player,
+  otherPlayers: Record<string, Player>,
+  gameSettings: GameSettings,
+) => {
   const listOfOtherPlayers = Object.values(otherPlayers)
 
   for (const otherPlayer of listOfOtherPlayers) {
     if (
       isColliding(
-        { location: player.snapshot.location, radius: player.radius() },
+        { location: player.snapshot.location, radius: player.radius(gameSettings) },
         {
           location: otherPlayer.snapshot.location,
-          radius: otherPlayer.radius(),
+          radius: otherPlayer.radius(gameSettings),
         },
       )
     ) {

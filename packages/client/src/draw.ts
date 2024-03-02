@@ -1,4 +1,4 @@
-import { GAME_SETTINGS, Orb, Player } from 'shared'
+import { GameSettings, Orb, Player } from 'shared'
 import { grey } from '@mui/material/colors'
 
 export const STARTING_ANGLE = 0
@@ -19,7 +19,7 @@ const position = (
   context.restore()
 }
 
-const grid = (context: CanvasRenderingContext2D) => {
+const grid = (context: CanvasRenderingContext2D, gameSettings: GameSettings) => {
   context.save()
 
   const SQUARE_SIZE = 25
@@ -27,27 +27,27 @@ const grid = (context: CanvasRenderingContext2D) => {
   context.strokeStyle = grey[200]
   context.beginPath()
 
-  for (let x = 0; x <= GAME_SETTINGS.MAP_WIDTH; x += SQUARE_SIZE) {
+  for (let x = 0; x <= gameSettings.MAP_WIDTH; x += SQUARE_SIZE) {
     context.moveTo(x, 0)
-    context.lineTo(x, GAME_SETTINGS.MAP_HEIGHT)
+    context.lineTo(x, gameSettings.MAP_HEIGHT)
   }
-  for (let y = 0; y <= GAME_SETTINGS.MAP_HEIGHT; y += SQUARE_SIZE) {
+  for (let y = 0; y <= gameSettings.MAP_HEIGHT; y += SQUARE_SIZE) {
     context.moveTo(0, y)
-    context.lineTo(GAME_SETTINGS.MAP_WIDTH, y)
+    context.lineTo(gameSettings.MAP_WIDTH, y)
   }
   context.stroke()
 
   context.restore()
 }
 
-export const center = (context: CanvasRenderingContext2D) => {
+export const center = (context: CanvasRenderingContext2D, gameSettings: GameSettings) => {
   context.save()
 
   const RADIUS = 10
   context.beginPath()
   context.arc(
-    GAME_SETTINGS.MAP_WIDTH / 2,
-    GAME_SETTINGS.MAP_HEIGHT / 2,
+    gameSettings.MAP_WIDTH / 2,
+    gameSettings.MAP_HEIGHT / 2,
     RADIUS,
     STARTING_ANGLE,
     ENDING_ANGLE,
@@ -64,7 +64,7 @@ export const center = (context: CanvasRenderingContext2D) => {
   context.restore()
 }
 
-const player = (context: CanvasRenderingContext2D, player: Player) => {
+const player = (context: CanvasRenderingContext2D, player: Player, gameSettings: GameSettings) => {
   if (player instanceof Player === false) {
     console.log(player)
   }
@@ -74,7 +74,7 @@ const player = (context: CanvasRenderingContext2D, player: Player) => {
   context.arc(
     player.snapshot.location.x,
     player.snapshot.location.y,
-    player.radius(),
+    player.radius(gameSettings),
     STARTING_ANGLE,
     ENDING_ANGLE,
   )

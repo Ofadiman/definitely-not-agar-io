@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker'
-import { GAME_SETTINGS } from '.'
+import { GameSettings } from '.'
 
 export type PlayerSnapshot = {
   id: string
@@ -34,14 +34,19 @@ export class Player {
     return player.snapshot
   }
 
-  static new(args: { type: PlayerSnapshot['type']; username: string; socketId: string }): Player {
+  static new(args: {
+    type: PlayerSnapshot['type']
+    username: string
+    socketId: string
+    gameSettings: GameSettings
+  }): Player {
     return new Player({
       id: faker.string.uuid(),
       type: args.type,
       color: faker.color.human(),
       location: {
-        x: faker.number.int({ min: 0, max: GAME_SETTINGS.MAP_WIDTH }),
-        y: faker.number.int({ min: 0, max: GAME_SETTINGS.MAP_HEIGHT }),
+        x: faker.number.int({ min: 0, max: args.gameSettings.MAP_WIDTH }),
+        y: faker.number.int({ min: 0, max: args.gameSettings.MAP_HEIGHT }),
       },
       username: args.username,
       vector: {
@@ -54,10 +59,10 @@ export class Player {
     })
   }
 
-  radius(): number {
+  radius(gameSettings: GameSettings): number {
     const surface =
-      Math.pow(GAME_SETTINGS.DEFAULT_PLAYER_RADIUS, 2) * Math.PI +
-      this.snapshot.absorbedOrbsCount * Math.pow(GAME_SETTINGS.ORB_RADIUS, 2) * Math.PI
+      Math.pow(gameSettings.INITIAL_PLAYER_RADIUS, 2) * Math.PI +
+      this.snapshot.absorbedOrbsCount * Math.pow(gameSettings.ORB_RADIUS, 2) * Math.PI
 
     const radius = Math.sqrt(surface / Math.PI)
 
