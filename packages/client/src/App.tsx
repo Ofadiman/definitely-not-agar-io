@@ -89,10 +89,6 @@ export const App = () => {
       }
 
       draw.player(context, player, gameRef.current.settings)
-      draw.position(context, {
-        radius: player.radius(gameRef.current.settings),
-        ...player.snapshot.location,
-      })
     })
 
     Object.values(gameRef.current.orbs).forEach((orb) => {

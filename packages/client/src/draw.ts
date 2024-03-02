@@ -4,21 +4,6 @@ import { grey } from '@mui/material/colors'
 export const STARTING_ANGLE = 0
 export const ENDING_ANGLE = 2 * Math.PI
 
-const position = (
-  context: CanvasRenderingContext2D,
-  position: { x: number; y: number; radius: number },
-) => {
-  context.save()
-
-  const fontSize = 20
-  const text = `x: ${Math.floor(position.x)}, y: ${Math.floor(position.y)}`
-  context.font = `bold ${fontSize}px Roboto`
-  context.textAlign = 'center'
-  context.fillText(text, position.x, position.y - fontSize - Math.round(position.radius / 2))
-
-  context.restore()
-}
-
 const grid = (context: CanvasRenderingContext2D, gameSettings: GameSettings) => {
   context.save()
 
@@ -65,9 +50,6 @@ export const center = (context: CanvasRenderingContext2D, gameSettings: GameSett
 }
 
 const player = (context: CanvasRenderingContext2D, player: Player, gameSettings: GameSettings) => {
-  if (player instanceof Player === false) {
-    console.log(player)
-  }
   context.save()
 
   context.beginPath()
@@ -80,12 +62,26 @@ const player = (context: CanvasRenderingContext2D, player: Player, gameSettings:
   )
   context.fillStyle = player.snapshot.color
   context.fill()
-
   context.strokeStyle = grey[400]
   context.lineWidth = 1
   context.stroke()
-
   context.closePath()
+
+  context.restore()
+
+  context.save()
+
+  const fontSize = 20
+  const text = `x: ${Math.floor(player.snapshot.location.x)}, y: ${Math.floor(
+    player.snapshot.location.y,
+  )}`
+  context.font = `bold ${fontSize}px Roboto`
+  context.textAlign = 'center'
+  context.fillText(
+    text,
+    player.snapshot.location.x,
+    player.snapshot.location.y - fontSize / 2 - player.radius(gameSettings),
+  )
 
   context.restore()
 }
@@ -107,5 +103,4 @@ export const draw = {
   center,
   orb,
   grid,
-  position,
 }
