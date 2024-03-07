@@ -13,6 +13,7 @@ import { checkForOrbCollisions, checkForPlayerCollisions } from './collisions'
 import { faker } from '@faker-js/faker'
 import { D } from '@mobily/ts-belt'
 import { gameSettingsPlugin } from './plugins/gameSettings.plugin'
+import { envPlugin } from './plugins/env.plugin'
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -49,6 +50,7 @@ const server = fastify({
   disableRequestLogging: true,
 })
 
+server.register(envPlugin)
 server.register(gameSettingsPlugin)
 
 server.register(fastifyIO, {
