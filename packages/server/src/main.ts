@@ -22,18 +22,18 @@ declare module 'fastify' {
   }
 }
 
-const createInitialOrbs = (gameSettings: GameSettings): Record<string, Orb> => {
+const createInitialOrbs = (gameSettings: GameSettings, orbsCount: number): Record<string, Orb> => {
   const orbs: Record<string, Orb> = {}
-  for (let i = 0; i < gameSettings.NUMBER_OF_ORBS; i++) {
+  for (let i = 0; i < orbsCount; i++) {
     const orb = createOrb(gameSettings)
     orbs[orb.id] = orb
   }
   return orbs
 }
 
-const createBots = (gameSettings: GameSettings): Record<string, Player> => {
+const createBots = (gameSettings: GameSettings, botsCount: number): Record<string, Player> => {
   const bots: Record<string, Player> = {}
-  for (let i = 0; i < gameSettings.NUMBER_OF_BOTS; i++) {
+  for (let i = 0; i < botsCount; i++) {
     const bot = Player.new({
       gameSettings,
       type: 'bot',
@@ -66,7 +66,7 @@ server.get('/', () => {
 server.ready().then(() => {
   const game: Game = {
     players: {},
-    orbs: createInitialOrbs(server.gameSettings),
+    orbs: createInitialOrbs(server.gameSettings, server.env.NUMBER_OF_ORBS),
     settings: server.gameSettings,
   }
 
@@ -85,7 +85,7 @@ server.ready().then(() => {
     socket.on('join_game', (data) => {
       if (Object.keys(game.players).length === 0) {
         cancelGameLoop = loop({
-          fps: server.gameSettings.FPS,
+          fps: server.gameSettings.fps,
           callback: () => {
             Object.values(game.players).forEach((player) => {
               if (player.isHuman()) {
@@ -125,8 +125,8 @@ server.ready().then(() => {
                     username: `bot: ${faker.person.firstName()}`,
                   })
                   const newBotAction: MoveTo = {
-                    x: faker.number.int({ min: 0, max: server.gameSettings.MAP_WIDTH }),
-                    y: faker.number.int({ min: 0, max: server.gameSettings.MAP_HEIGHT }),
+                    x: faker.number.int({ min: 0, max: server.gameSettings.map.width }),
+                    y: faker.number.int({ min: 0, max: server.gameSettings.map.height }),
                   }
 
                   game.players[newBot.snapshot.socketId] = newBot
@@ -152,8 +152,8 @@ server.ready().then(() => {
                 player.snapshot.location.x = moveTo.x
                 player.snapshot.location.y = moveTo.y
                 botActions[player.snapshot.socketId] = {
-                  x: faker.number.int({ min: 0, max: server.gameSettings.MAP_WIDTH }),
-                  y: faker.number.int({ min: 0, max: server.gameSettings.MAP_HEIGHT }),
+                  x: faker.number.int({ min: 0, max: server.gameSettings.map.width }),
+                  y: faker.number.int({ min: 0, max: server.gameSettings.map.height }),
                 }
               } else {
                 // TODO: Replace "1" with calculated player speed.
@@ -167,12 +167,12 @@ server.ready().then(() => {
           },
         })
 
-        const bots = createBots(server.gameSettings)
+        const bots = createBots(server.gameSettings, server.env.NUMBER_OF_BOTS)
         game.players = bots
         Object.values(bots).forEach((bot) => {
           botActions[bot.snapshot.socketId] = {
-            x: faker.number.int({ min: 0, max: server.gameSettings.MAP_WIDTH }),
-            y: faker.number.int({ min: 0, max: server.gameSettings.MAP_HEIGHT }),
+            x: faker.number.int({ min: 0, max: server.gameSettings.map.width }),
+            y: faker.number.int({ min: 0, max: server.gameSettings.map.height }),
           }
         })
       }
@@ -208,10 +208,10 @@ server.ready().then(() => {
         player.snapshot.location.x = 0 + radius
       }
       if (
-        player.snapshot.location.x + radius > server.gameSettings.MAP_WIDTH &&
+        player.snapshot.location.x + radius > server.gameSettings.map.width &&
         player.snapshot.vector.x > 0
       ) {
-        player.snapshot.location.x = server.gameSettings.MAP_WIDTH - radius
+        player.snapshot.location.x = server.gameSettings.map.width - radius
       }
 
       // TODO: Replace "1" with calculated player speed.
@@ -219,10 +219,10 @@ server.ready().then(() => {
       if (player.snapshot.location.y - radius < 0 && player.snapshot.vector.y > 0) {
         player.snapshot.location.y = 0 + radius
       } else if (
-        player.snapshot.location.y + radius > server.gameSettings.MAP_HEIGHT &&
+        player.snapshot.location.y + radius > server.gameSettings.map.height &&
         vector.y < 0
       ) {
-        player.snapshot.location.y = server.gameSettings.MAP_HEIGHT - radius
+        player.snapshot.location.y = server.gameSettings.map.height - radius
       }
 
       const orbId = checkForOrbCollisions(player, game.orbs, server.gameSettings)

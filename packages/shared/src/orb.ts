@@ -11,10 +11,10 @@ export const createOrb = (gameSettings: GameSettings): Orb => {
   return {
     id: faker.string.uuid(),
     location: {
-      x: faker.number.int({ min: 0, max: gameSettings.MAP_WIDTH }),
-      y: faker.number.int({ min: 0, max: gameSettings.MAP_HEIGHT }),
+      x: faker.number.int({ min: 0, max: gameSettings.map.width }),
+      y: faker.number.int({ min: 0, max: gameSettings.map.height }),
     },
-    radius: gameSettings.ORB_RADIUS,
+    radius: gameSettings.orbRadius,
     color: faker.color.human(),
   }
 }

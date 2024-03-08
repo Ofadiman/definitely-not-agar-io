@@ -12,13 +12,13 @@ const grid = (context: CanvasRenderingContext2D, gameSettings: GameSettings) => 
   context.strokeStyle = grey[200]
   context.beginPath()
 
-  for (let x = 0; x <= gameSettings.MAP_WIDTH; x += SQUARE_SIZE) {
+  for (let x = 0; x <= gameSettings.map.width; x += SQUARE_SIZE) {
     context.moveTo(x, 0)
-    context.lineTo(x, gameSettings.MAP_HEIGHT)
+    context.lineTo(x, gameSettings.map.height)
   }
-  for (let y = 0; y <= gameSettings.MAP_HEIGHT; y += SQUARE_SIZE) {
+  for (let y = 0; y <= gameSettings.map.height; y += SQUARE_SIZE) {
     context.moveTo(0, y)
-    context.lineTo(gameSettings.MAP_WIDTH, y)
+    context.lineTo(gameSettings.map.width, y)
   }
   context.stroke()
 
@@ -31,8 +31,8 @@ export const center = (context: CanvasRenderingContext2D, gameSettings: GameSett
   const RADIUS = 10
   context.beginPath()
   context.arc(
-    gameSettings.MAP_WIDTH / 2,
-    gameSettings.MAP_HEIGHT / 2,
+    gameSettings.map.width / 2,
+    gameSettings.map.height / 2,
     RADIUS,
     STARTING_ANGLE,
     ENDING_ANGLE,

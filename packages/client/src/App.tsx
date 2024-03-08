@@ -109,7 +109,7 @@ export const App = () => {
       }
 
       cancelGameLoopRef.current = loop({
-        fps: data.settings.FPS,
+        fps: data.settings.fps,
         callback: () => {
           if (gameRef.current === null) {
             console.error('gameRef.current is null in game loop (setInterval)')

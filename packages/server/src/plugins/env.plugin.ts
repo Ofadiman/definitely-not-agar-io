@@ -16,10 +16,16 @@ const envSchema = z
   })
   .strip()
 
+declare module 'fastify' {
+  interface FastifyInstance {
+    env: z.infer<typeof envSchema>
+  }
+}
+
 export const envPlugin = fp(function (fastify, _opts, done) {
   const env = envSchema.parse(process.env)
-  console.log(env)
 
   fastify.decorate('env', env)
+
   done()
 })

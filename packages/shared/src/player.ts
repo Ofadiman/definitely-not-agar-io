@@ -45,8 +45,8 @@ export class Player {
       type: args.type,
       color: faker.color.human(),
       location: {
-        x: faker.number.int({ min: 0, max: args.gameSettings.MAP_WIDTH }),
-        y: faker.number.int({ min: 0, max: args.gameSettings.MAP_HEIGHT }),
+        x: faker.number.int({ min: 0, max: args.gameSettings.map.width }),
+        y: faker.number.int({ min: 0, max: args.gameSettings.map.height }),
       },
       username: args.username,
       vector: {
@@ -61,8 +61,8 @@ export class Player {
 
   radius(gameSettings: GameSettings): number {
     const surface =
-      Math.pow(gameSettings.INITIAL_PLAYER_RADIUS, 2) * Math.PI +
-      this.snapshot.absorbedOrbsCount * Math.pow(gameSettings.ORB_RADIUS, 2) * Math.PI
+      Math.pow(gameSettings.initialPlayerRadius, 2) * Math.PI +
+      this.snapshot.absorbedOrbsCount * Math.pow(gameSettings.orbRadius, 2) * Math.PI
 
     const radius = Math.sqrt(surface / Math.PI)
 
