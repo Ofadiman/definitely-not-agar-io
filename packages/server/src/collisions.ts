@@ -57,7 +57,7 @@ export const checkForPlayerCollisions = (
 
   for (const otherPlayer of listOfOtherPlayers) {
     if (otherPlayer.isDead()) {
-      return
+      continue
     }
 
     if (
