@@ -237,6 +237,7 @@ server.ready().then(() => {
       const lastPlayerDisconnected = humanPlayersLeftCount === 1
       if (lastPlayerDisconnected) {
         game.players = {}
+        game.orbs = createInitialOrbs(server.gameSettings, server.env.NUMBER_OF_ORBS)
 
         if (cancelGameLoop) {
           cancelGameLoop()

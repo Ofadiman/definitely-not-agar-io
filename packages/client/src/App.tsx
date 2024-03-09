@@ -23,6 +23,12 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { draw } from './draw'
 import { D } from '@mobily/ts-belt'
 
+declare global {
+  interface Window {
+    game?: Game
+  }
+}
+
 const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io('http://localhost:3000/', {
   autoConnect: false,
 })
@@ -101,11 +107,14 @@ export const App = () => {
     socket.connect()
 
     socket.on('game_state', (data) => {
-      gameRef.current = {
+      const game = {
         orbs: data.orbs,
         players: D.map(data.players, (snapshot) => Player.fromSnapshot(snapshot)),
         settings: data.settings,
       }
+
+      gameRef.current = game
+      window.game = game
 
       cancelGameLoopRef.current = loop({
         fps: data.settings.fps,
