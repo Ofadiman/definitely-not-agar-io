@@ -83,16 +83,16 @@ export const App = () => {
 
     draw.grid(context, gameRef.current.settings)
 
+    Object.values(gameRef.current.orbs).forEach((orb) => {
+      draw.orb(context, orb)
+    })
+
     Object.values(gameRef.current.players).forEach((player) => {
       if (!gameRef.current) {
         return
       }
 
       draw.player(context, player, gameRef.current.settings)
-    })
-
-    Object.values(gameRef.current.orbs).forEach((orb) => {
-      draw.orb(context, orb)
     })
 
     animationFrameRef.current = requestAnimationFrame(drawGame)
