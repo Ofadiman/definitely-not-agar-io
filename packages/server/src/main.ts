@@ -113,25 +113,6 @@ server.ready().then(() => {
 
                 consumedPlayer.snapshot.state = 'dead'
 
-                if (consumedPlayer.isBot()) {
-                  delete game.players[consumedPlayerId]
-                  delete botActions[consumedPlayerId]
-
-                  const newBot = Player.new({
-                    gameSettings: server.gameSettings,
-                    type: 'bot',
-                    socketId: faker.string.uuid(),
-                    username: `bot: ${faker.person.firstName()}`,
-                  })
-                  const newBotAction: MoveTo = {
-                    x: faker.number.int({ min: 0, max: server.gameSettings.map.width }),
-                    y: faker.number.int({ min: 0, max: server.gameSettings.map.height }),
-                  }
-
-                  game.players[newBot.snapshot.socketId] = newBot
-                  botActions[newBot.snapshot.socketId] = newBotAction
-                }
-
                 server.io.to('game').emit('consume_player', {
                   consumedById: player.snapshot.socketId,
                   consumedPlayerId,
