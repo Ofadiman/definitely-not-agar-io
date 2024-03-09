@@ -117,7 +117,10 @@ export const App = () => {
 
           const player = gameRef.current.players[socket.id]
           if (!player) {
-            console.error('player is undefined in game loop (setInterval)')
+            return
+          }
+
+          if (player.isDead()) {
             return
           }
 
@@ -222,10 +225,10 @@ export const App = () => {
 
           const player = gameRef.current.players[socket.id]
           if (!player) {
-            console.error(`there is no player with id: ${socket.id} in the game`)
             return
           }
 
+          // TODO: There is a possible problem here. I think, the event for updating player vector should be sent here and the vector value should be taken from server-side state to avoid visual glitches when vectors are diffrent on the client-side vs server-side.
           player.snapshot.vector = vector
         }}
         ref={canvasRef}

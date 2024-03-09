@@ -5,6 +5,7 @@ export type PlayerSnapshot = {
   id: string
   socketId: string
   type: 'human' | 'bot'
+  state: 'alive' | 'dead'
   username: string
   color: string
   absorbedOrbsCount: number
@@ -43,6 +44,7 @@ export class Player {
     return new Player({
       id: faker.string.uuid(),
       type: args.type,
+      state: 'alive',
       color: faker.color.human(),
       location: {
         x: faker.number.int({ min: 0, max: args.gameSettings.map.width }),
@@ -75,5 +77,13 @@ export class Player {
 
   isHuman(): boolean {
     return this.snapshot.type === 'human'
+  }
+
+  isAlive(): boolean {
+    return this.snapshot.state === 'alive'
+  }
+
+  isDead(): boolean {
+    return this.snapshot.state === 'dead'
   }
 }

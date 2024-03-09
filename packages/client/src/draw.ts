@@ -50,6 +50,10 @@ export const center = (context: CanvasRenderingContext2D, gameSettings: GameSett
 }
 
 const player = (context: CanvasRenderingContext2D, player: Player, gameSettings: GameSettings) => {
+  if (player.isDead()) {
+    return
+  }
+
   context.save()
 
   context.beginPath()

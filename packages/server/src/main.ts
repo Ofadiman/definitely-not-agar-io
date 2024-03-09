@@ -88,10 +88,6 @@ server.ready().then(() => {
           fps: server.gameSettings.fps,
           callback: () => {
             Object.values(game.players).forEach((player) => {
-              if (player.isHuman()) {
-                return
-              }
-
               const consumedOrbId = checkForOrbCollisions(player, game.orbs, server.gameSettings)
               if (consumedOrbId !== null) {
                 delete game.orbs[consumedOrbId]
@@ -108,11 +104,14 @@ server.ready().then(() => {
                 game.players,
                 server.gameSettings,
               )
+
               if (consumedPlayerId) {
                 const consumedPlayer = game.players[consumedPlayerId]
                 if (!consumedPlayer) {
                   return
                 }
+
+                consumedPlayer.snapshot.state = 'dead'
 
                 if (consumedPlayer.isBot()) {
                   delete game.players[consumedPlayerId]
