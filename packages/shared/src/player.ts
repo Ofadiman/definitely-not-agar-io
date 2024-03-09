@@ -41,6 +41,9 @@ export class Player {
     socketId: string
     gameSettings: GameSettings
   }): Player {
+    const vectorX = faker.number.float({ min: -1, max: 1 }) * faker.helpers.arrayElement([-1, 1])
+    const vectorY = (1 - Math.abs(vectorX)) * faker.helpers.arrayElement([-1, 1])
+
     return new Player({
       id: faker.string.uuid(),
       type: args.type,
@@ -52,8 +55,8 @@ export class Player {
       },
       username: args.username,
       vector: {
-        x: faker.number.float({ min: -1, max: 1 }),
-        y: faker.number.float({ min: -1, max: 1 }),
+        x: vectorX,
+        y: vectorY,
       },
       socketId: args.socketId,
       absorbedOrbsCount: 0,
