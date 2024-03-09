@@ -227,12 +227,22 @@ server.ready().then(() => {
     })
 
     socket.on('disconnect', () => {
-      delete game.players[socket.id]
+      const humanPlayersLeftCount = Object.values(game.players).reduce((acc, player) => {
+        if (player.isHuman()) {
+          return acc + 1
+        }
+        return acc
+      }, 0)
 
-      if (Object.keys(game.players).length === 0 && cancelGameLoop !== null) {
+      const lastPlayerDisconnected = humanPlayersLeftCount === 1
+      if (lastPlayerDisconnected) {
+        game.players = {}
+
         if (cancelGameLoop) {
           cancelGameLoop()
         }
+      } else {
+        delete game.players[socket.id]
       }
     })
   })
