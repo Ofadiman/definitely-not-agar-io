@@ -52,8 +52,8 @@ export class Player {
       },
       username: args.username,
       vector: {
-        x: 0,
-        y: 0,
+        x: faker.number.float({ min: -1, max: 1 }),
+        y: faker.number.float({ min: -1, max: 1 }),
       },
       socketId: args.socketId,
       absorbedOrbsCount: 0,
