@@ -21,7 +21,6 @@ import {
 import { useForm, SubmitHandler } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { draw } from './draw'
-import { v4 } from 'uuid'
 import { D } from '@mobily/ts-belt'
 
 const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io('http://localhost:3000/', {
@@ -29,7 +28,7 @@ const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io('http://lo
 })
 
 export const App = () => {
-  const [notifications, setNotifications] = useState<Record<string, string>>({})
+  const [notification, setNotification] = useState<string | null>(null)
   const gameRef = useRef<Game | null>(null)
   const cancelGameLoopRef = useRef<Function | null>(null)
   const [isUsernameModalOpen, setIsUsernameModalOpen] = useState(true)
@@ -156,26 +155,13 @@ export const App = () => {
       }
 
       if (data.consumedPlayerId === socket.id) {
-        setNotifications((prev) => {
-          return {
-            ...prev,
-            [v4()]: `You have been consumed by ${data.consumedById} player!`,
-          }
-        })
+        setNotification(`You have been consumed by ${data.consumedById} player!`)
       } else if (data.consumedById === socket.id) {
-        setNotifications((prev) => {
-          return {
-            ...prev,
-            [v4()]: `You have consumed ${data.consumedPlayerId} player!`,
-          }
-        })
+        setNotification(`You have consumed ${data.consumedPlayerId} player!`)
       } else {
-        setNotifications((prev) => {
-          return {
-            ...prev,
-            [v4()]: `Player ${data.consumedPlayerId} was consumed by player ${data.consumedById}!`,
-          }
-        })
+        setNotification(
+          `Player ${data.consumedPlayerId} was consumed by player ${data.consumedById}!`,
+        )
       }
     })
 
@@ -300,24 +286,17 @@ export const App = () => {
         </DialogActions>
       </Dialog>
 
-      {Object.entries(notifications).map(([id, text]) => {
-        return (
-          <Snackbar
-            key={id}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            open={notifications[id] !== undefined}
-            onClose={() => {
-              setNotifications((prev) => {
-                const copy = { ...prev }
-                delete copy[id]
-                return copy
-              })
-            }}
-            message={text}
-            autoHideDuration={3000}
-          />
-        )
-      })}
+      {notification && (
+        <Snackbar
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          open={notification !== null}
+          onClose={() => {
+            setNotification(null)
+          }}
+          message={notification}
+          autoHideDuration={3000}
+        />
+      )}
     </>
   )
 }
