@@ -132,12 +132,12 @@ server.ready().then(() => {
               }
             })
 
+            server.io.to('game').emit('game_tick', D.map(game.players, Player.toSnapshot))
+
             const winner = drawWinner(game)
             if (winner) {
               cancelGameLoop()
               server.io.to('game').emit('draw_winner', { winnerId: winner.snapshot.socketId })
-            } else {
-              server.io.to('game').emit('game_tick', D.map(game.players, Player.toSnapshot))
             }
           },
         })
