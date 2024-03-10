@@ -1,5 +1,4 @@
 import { GameSettings, Orb, Player } from 'shared'
-import { grey } from '@mui/material/colors'
 
 export const STARTING_ANGLE = 0
 export const ENDING_ANGLE = 2 * Math.PI
@@ -9,7 +8,7 @@ const grid = (context: CanvasRenderingContext2D, gameSettings: GameSettings) => 
 
   const SQUARE_SIZE = 25
 
-  context.strokeStyle = grey[200]
+  context.strokeStyle = '#e5e7eb'
   context.beginPath()
 
   for (let x = 0; x <= gameSettings.map.width; x += SQUARE_SIZE) {
@@ -40,7 +39,7 @@ export const center = (context: CanvasRenderingContext2D, gameSettings: GameSett
   context.fillStyle = 'black'
   context.fill()
 
-  context.strokeStyle = grey[300]
+  context.strokeStyle = '#d1d5db'
   context.lineWidth = 1
   context.stroke()
 
@@ -66,8 +65,8 @@ const player = (context: CanvasRenderingContext2D, player: Player, gameSettings:
   )
   context.fillStyle = player.snapshot.color
   context.fill()
-  context.strokeStyle = grey[400]
-  context.lineWidth = 1
+  context.strokeStyle = '#9ca3af'
+  context.lineWidth = 0.5
   context.stroke()
   context.closePath()
 
