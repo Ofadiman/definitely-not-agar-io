@@ -115,6 +115,8 @@ server.ready().then(() => {
 
               const orbId = checkForOrbCollisions(player, game.orbs, server.gameSettings)
               if (orbId) {
+                player.snapshot.absorbedOrbsCount++
+                // TODO: Maybe instead of deleting orb from the game, just updates existing orb coordinates.
                 delete game.orbs[orbId]
 
                 const newOrb = createOrb(server.gameSettings)
@@ -133,6 +135,8 @@ server.ready().then(() => {
               if (consumedPlayerId) {
                 const consumedPlayer = game.players[consumedPlayerId]
                 if (consumedPlayer) {
+                  player.snapshot.absorbedOrbsCount += consumedPlayer.snapshot.absorbedOrbsCount
+
                   consumedPlayer.snapshot.state = 'dead'
 
                   server.io.to('game').emit('consume_player', {

@@ -36,8 +36,6 @@ export const checkForOrbCollisions = (
     if (
       isColliding({ location: player.snapshot.location, radius: player.radius(gameSettings) }, orb)
     ) {
-      // TODO: That logic should not be here.
-      player.snapshot.absorbedOrbsCount++
       return orb.id
     }
   }
@@ -71,8 +69,6 @@ export const checkForPlayerCollisions = (
       )
     ) {
       if (player.snapshot.absorbedOrbsCount > otherPlayer.snapshot.absorbedOrbsCount) {
-        // TODO: That logic should not be here.
-        player.snapshot.absorbedOrbsCount += otherPlayer.snapshot.absorbedOrbsCount
         return otherPlayer.snapshot.socketId
       }
     }
