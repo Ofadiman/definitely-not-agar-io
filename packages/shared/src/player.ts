@@ -8,7 +8,7 @@ export type PlayerSnapshot = {
   state: 'alive' | 'dead'
   username: string
   color: string
-  boundary: number
+  border: number
   absorbedOrbsCount: number
   absorbedPlayersCount: number
   vector: {
@@ -42,6 +42,7 @@ export class Player {
     socketId: string
     gameSettings: GameSettings
   }): Player {
+    const border = faker.number.int({ min: 0, max: 200 })
     const vectorX = faker.number.float({ min: -1, max: 1 }) * faker.helpers.arrayElement([-1, 1])
     const vectorY = (1 - Math.abs(vectorX)) * faker.helpers.arrayElement([-1, 1])
 
@@ -50,10 +51,16 @@ export class Player {
       type: args.type,
       state: 'alive',
       color: faker.color.human(),
-      boundary: faker.number.int({ min: 0, max: 200 }),
+      border: border,
       location: {
-        x: faker.number.int({ min: 0, max: args.gameSettings.map.width }),
-        y: faker.number.int({ min: 0, max: args.gameSettings.map.height }),
+        x: faker.number.int({
+          min: 0 + args.gameSettings.initialPlayerRadius + border,
+          max: args.gameSettings.map.width - args.gameSettings.initialPlayerRadius - border,
+        }),
+        y: faker.number.int({
+          min: 0 + args.gameSettings.initialPlayerRadius + border,
+          max: args.gameSettings.map.height - args.gameSettings.initialPlayerRadius - border,
+        }),
       },
       username: args.username,
       vector: {
@@ -118,7 +125,7 @@ export class Player {
 
     if (this.isBot()) {
       const crossesLeftBorder =
-        this.snapshot.location.x - this.radius(gameSettings) < this.snapshot.boundary
+        this.snapshot.location.x - this.radius(gameSettings) < this.snapshot.border
       if (crossesLeftBorder) {
         const vectorX = faker.number.float({ min: 0, max: 1 })
         const vectorY = (1 - vectorX) * faker.helpers.arrayElement([-1, 1])
@@ -130,7 +137,7 @@ export class Player {
 
       const crossesRightBorder =
         this.snapshot.location.x + this.radius(gameSettings) >
-        gameSettings.map.width - this.snapshot.boundary
+        gameSettings.map.width - this.snapshot.border
       if (crossesRightBorder) {
         const vectorX = faker.number.float({ min: -1, max: 0 })
         const vectorY = (1 + vectorX) * faker.helpers.arrayElement([-1, 1])
@@ -142,7 +149,7 @@ export class Player {
       }
 
       const crossesTopBorder =
-        this.snapshot.location.y - this.radius(gameSettings) < this.snapshot.boundary
+        this.snapshot.location.y - this.radius(gameSettings) < this.snapshot.border
       if (crossesTopBorder) {
         const vectorY = faker.number.float({ min: -1, max: 0 })
         const vectorX = (1 + vectorY) * faker.helpers.arrayElement([-1, 1])
@@ -155,7 +162,7 @@ export class Player {
 
       const crossesBottomBorder =
         this.snapshot.location.y + this.radius(gameSettings) >
-        gameSettings.map.height - this.snapshot.boundary
+        gameSettings.map.height - this.snapshot.border
       if (crossesBottomBorder) {
         const vectorY = faker.number.float({ min: 0, max: 1 })
         const vectorX = (1 - vectorY) * faker.helpers.arrayElement([-1, 1])
