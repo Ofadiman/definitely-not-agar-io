@@ -11,13 +11,14 @@ const grid = (context: CanvasRenderingContext2D, gameSettings: GameSettings) => 
   context.strokeStyle = '#e5e7eb'
   context.beginPath()
 
-  for (let x = 0; x <= gameSettings.map.width; x += SQUARE_SIZE) {
-    context.moveTo(x, 0)
-    context.lineTo(x, gameSettings.map.height)
+  for (let x = -gameSettings.map.width / 2; x <= gameSettings.map.width * 1.5; x += SQUARE_SIZE) {
+    context.moveTo(x, -gameSettings.map.height / 2)
+    context.lineTo(x, gameSettings.map.height * 1.5)
   }
-  for (let y = 0; y <= gameSettings.map.height; y += SQUARE_SIZE) {
-    context.moveTo(0, y)
-    context.lineTo(gameSettings.map.width, y)
+
+  for (let y = -gameSettings.map.height / 2; y <= gameSettings.map.height * 1.5; y += SQUARE_SIZE) {
+    context.moveTo(-gameSettings.map.width / 2, y)
+    context.lineTo(gameSettings.map.width * 1.5, y)
   }
   context.stroke()
 
