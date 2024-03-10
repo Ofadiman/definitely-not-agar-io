@@ -92,30 +92,7 @@ server.ready().then(() => {
                 return
               }
 
-              const radius = player.radius(server.gameSettings)
-
-              // TODO: Replace "1" with calculated player speed.
-              player.snapshot.location.x += 1 * player.snapshot.vector.x
-              if (player.snapshot.location.x - radius < 0 && player.snapshot.vector.x < 0) {
-                player.snapshot.location.x = 0 + radius
-              }
-              if (
-                player.snapshot.location.x + radius > server.gameSettings.map.width &&
-                player.snapshot.vector.x > 0
-              ) {
-                player.snapshot.location.x = server.gameSettings.map.width - radius
-              }
-
-              // TODO: Replace "1" with calculated player speed.
-              player.snapshot.location.y -= 1 * player.snapshot.vector.y
-              if (player.snapshot.location.y - radius < 0 && player.snapshot.vector.y > 0) {
-                player.snapshot.location.y = 0 + radius
-              } else if (
-                player.snapshot.location.y + radius > server.gameSettings.map.height &&
-                player.snapshot.vector.y < 0
-              ) {
-                player.snapshot.location.y = server.gameSettings.map.height - radius
-              }
+              player.move(server.gameSettings)
 
               const orbId = checkForOrbCollisions(player, game.orbs, server.gameSettings)
               if (orbId) {
