@@ -9,7 +9,7 @@ export type ServerToClientEvents = {
     players: Record<string, PlayerSnapshot>
   }) => void
   game_tick: (data: Record<string, PlayerSnapshot>) => void
-  consume_orb: (data: { consumedOrbId: string; newOrb: OrbSnapshot }) => void
+  consume_orb: (data: OrbSnapshot) => void
   consume_player: (data: { consumedPlayerId: string; consumedById: string }) => void
 }
 

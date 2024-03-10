@@ -35,4 +35,11 @@ export class Orb {
       color: faker.color.human(),
     })
   }
+
+  relocate(args: { gameSettings: GameSettings }) {
+    this.snapshot.location = {
+      x: faker.number.int({ min: 0, max: args.gameSettings.map.width }),
+      y: faker.number.int({ min: 0, max: args.gameSettings.map.height }),
+    }
+  }
 }

@@ -161,10 +161,8 @@ export const App = () => {
         return
       }
 
-      delete gameRef.current.orbs[data.consumedOrbId]
-      const instance = Orb.fromSnapshot(data.newOrb)
-
-      gameRef.current.orbs[instance.snapshot.id] = instance
+      const orb = Orb.fromSnapshot(data)
+      gameRef.current.orbs[orb.snapshot.id] = orb
     })
 
     socket.on('consume_player', (data) => {
