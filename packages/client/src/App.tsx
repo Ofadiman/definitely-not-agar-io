@@ -85,10 +85,24 @@ export const App = () => {
     context.setTransform(1, 0, 0, 1, 0, 0)
     context.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
 
+    // This code calculates how much to scale canvas so that player radius takes exactly 20% of the smaller screen dimension.
+    const potentialZoom =
+      (Math.min(window.innerWidth, window.innerHeight) * 0.2) /
+      2 /
+      player.radius(gameRef.current.settings)
+
+    // This code rounds the perfect zoom to the nearest "even" float. This is needed to reduce screen jumping.
+    // Example: 1.54 => 1.4, 1.55 => 1.6
+    const rounded = (Math.floor(Math.round(potentialZoom * 10) / 2) * 2) / 10
+
+    const zoom = parseFloat(Math.max(1, rounded).toFixed(1))
+
     context.translate(
-      -player.snapshot.location.x + canvasRef.current.width / 2,
-      -player.snapshot.location.y + canvasRef.current.height / 2,
+      -player.snapshot.location.x * zoom + canvasRef.current.width / 2,
+      -player.snapshot.location.y * zoom + canvasRef.current.height / 2,
     )
+
+    context.scale(zoom, zoom)
 
     draw.grid(context, gameRef.current.settings)
 
@@ -105,7 +119,7 @@ export const App = () => {
         return
       }
 
-      draw.player(context, player, gameRef.current.settings)
+      draw.player(context, player, gameRef.current.settings, socket.id)
     })
 
     animationFrameRef.current = requestAnimationFrame(drawGame)

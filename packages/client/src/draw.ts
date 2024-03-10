@@ -48,7 +48,12 @@ export const center = (context: CanvasRenderingContext2D, gameSettings: GameSett
   context.restore()
 }
 
-const player = (context: CanvasRenderingContext2D, player: Player, gameSettings: GameSettings) => {
+const player = (
+  context: CanvasRenderingContext2D,
+  player: Player,
+  gameSettings: GameSettings,
+  socketId: string,
+) => {
   if (player.isDead()) {
     return
   }
@@ -87,6 +92,14 @@ const player = (context: CanvasRenderingContext2D, player: Player, gameSettings:
   )
 
   context.restore()
+
+  if (player.snapshot.socketId === socketId) {
+    context.save()
+    context.font = `bold ${fontSize}px Roboto`
+    context.textAlign = 'center'
+    context.fillText('me', player.snapshot.location.x, player.snapshot.location.y + fontSize / 4)
+    context.restore()
+  }
 }
 
 const orb = (context: CanvasRenderingContext2D, orb: Orb, gameSettings: GameSettings) => {
