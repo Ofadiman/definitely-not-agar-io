@@ -26,10 +26,6 @@ export const checkForOrbCollisions = (
   orbs: Record<string, Orb>,
   gameSettings: GameSettings,
 ) => {
-  if (player.isDead()) {
-    return null
-  }
-
   const listOfOrbs = Object.values(orbs)
 
   for (const orb of listOfOrbs) {
@@ -48,10 +44,6 @@ export const checkForPlayerCollisions = (
   otherPlayers: Record<string, Player>,
   gameSettings: GameSettings,
 ) => {
-  if (player.isDead()) {
-    return null
-  }
-
   const listOfOtherPlayers = Object.values(otherPlayers)
 
   for (const otherPlayer of listOfOtherPlayers) {

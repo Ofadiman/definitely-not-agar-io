@@ -88,6 +88,10 @@ server.ready().then(() => {
           fps: server.gameSettings.fps,
           callback: () => {
             Object.values(game.players).forEach((player) => {
+              if (player.isDead()) {
+                return
+              }
+
               const radius = player.radius(server.gameSettings)
 
               // TODO: Replace "1" with calculated player speed.
