@@ -66,24 +66,27 @@ server.get('/', () => {
 server.ready().then(() => {
   const game: Game = {
     players: {},
-    orbs: createInitialOrbs(server.gameSettings, server.env.NUMBER_OF_ORBS),
+    orbs: {},
     settings: server.gameSettings,
   }
 
   let cancelGameLoop: () => void
 
-  type MoveTo = {
-    x: number
-    y: number
-  }
-
-  const botActions: Record<string, MoveTo> = {}
-
   server.io.on('connect', (socket) => {
     socket.join('game')
 
     socket.on('join_game', (data) => {
-      if (Object.keys(game.players).length === 0) {
+      const humanPlayersCount = Object.values(game.players).reduce((acc, player) => {
+        if (player.isHuman()) {
+          return acc + 1
+        }
+        return acc
+      }, 0)
+
+      if (humanPlayersCount === 0) {
+        game.players = createBots(server.gameSettings, server.env.NUMBER_OF_BOTS)
+        game.orbs = createInitialOrbs(server.gameSettings, server.env.NUMBER_OF_ORBS)
+
         cancelGameLoop = loop({
           fps: server.gameSettings.fps,
           callback: () => {
@@ -131,15 +134,6 @@ server.ready().then(() => {
             server.io.to('game').emit('game_tick', D.map(game.players, Player.toSnapshot))
           },
         })
-
-        const bots = createBots(server.gameSettings, server.env.NUMBER_OF_BOTS)
-        game.players = bots
-        Object.values(bots).forEach((bot) => {
-          botActions[bot.snapshot.socketId] = {
-            x: faker.number.int({ min: 0, max: server.gameSettings.map.width }),
-            y: faker.number.int({ min: 0, max: server.gameSettings.map.height }),
-          }
-        })
       }
 
       game.players[socket.id] = Player.new({
@@ -167,23 +161,20 @@ server.ready().then(() => {
     })
 
     socket.on('disconnect', () => {
-      const humanPlayersLeftCount = Object.values(game.players).reduce((acc, player) => {
+      delete game.players[socket.id]
+
+      const humanPlayersCount = Object.values(game.players).reduce((acc, player) => {
         if (player.isHuman()) {
           return acc + 1
         }
         return acc
       }, 0)
 
-      const lastPlayerDisconnected = humanPlayersLeftCount === 1
+      const lastPlayerDisconnected = humanPlayersCount === 0
       if (lastPlayerDisconnected) {
-        game.players = {}
-        game.orbs = createInitialOrbs(server.gameSettings, server.env.NUMBER_OF_ORBS)
-
         if (cancelGameLoop) {
           cancelGameLoop()
         }
-      } else {
-        delete game.players[socket.id]
       }
     })
   })
