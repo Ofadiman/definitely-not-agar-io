@@ -99,9 +99,9 @@ export class Player {
     return this.snapshot.state === 'dead'
   }
 
-  move(gameSettings: GameSettings): void {
-    // TODO: Replace "1" with calculated player speed.
-    this.snapshot.location.x += 1 * this.snapshot.vector.x
+  move(gameSettings: GameSettings, initialSpeed: number): void {
+    const speed: number = initialSpeed - this.radius(gameSettings) / 100
+    this.snapshot.location.x += speed * this.snapshot.vector.x
     if (this.snapshot.location.x - this.radius(gameSettings) < 0 && this.snapshot.vector.x < 0) {
       this.snapshot.location.x = 0 + this.radius(gameSettings)
     }
@@ -112,8 +112,7 @@ export class Player {
       this.snapshot.location.x = gameSettings.map.width - this.radius(gameSettings)
     }
 
-    // TODO: Replace "1" with calculated this speed.
-    this.snapshot.location.y -= 1 * this.snapshot.vector.y
+    this.snapshot.location.y -= speed * this.snapshot.vector.y
     if (this.snapshot.location.y - this.radius(gameSettings) < 0 && this.snapshot.vector.y > 0) {
       this.snapshot.location.y = 0 + this.radius(gameSettings)
     } else if (

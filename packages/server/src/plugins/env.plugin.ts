@@ -5,6 +5,7 @@ import { z } from 'zod'
 const envSchema = z
   .object({
     INITIAL_PLAYER_RADIUS: z.coerce.number().int().gte(5).lte(25).default(10),
+    INITIAL_PLAYER_SPEED: z.coerce.number().gte(0.5).lte(4).default(2),
     FPS: z
       .union([z.coerce.number().min(30).max(30), z.coerce.number().min(60).max(60)])
       .default(60),

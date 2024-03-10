@@ -96,7 +96,7 @@ server.ready().then(() => {
                 return
               }
 
-              player.move(server.gameSettings)
+              player.move(server.gameSettings, server.env.INITIAL_PLAYER_SPEED)
 
               const orbId = checkForOrbCollisions(player, game.orbs, server.gameSettings)
               if (orbId) {
