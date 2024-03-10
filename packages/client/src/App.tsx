@@ -17,6 +17,7 @@ import {
   loop,
   PlayerSnapshot,
   Player,
+  Orb,
 } from 'shared'
 import { useForm, SubmitHandler } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -89,7 +90,11 @@ export const App = () => {
     draw.grid(context, gameRef.current.settings)
 
     Object.values(gameRef.current.orbs).forEach((orb) => {
-      draw.orb(context, orb)
+      if (!gameRef.current) {
+        return
+      }
+
+      draw.orb(context, orb, gameRef.current.settings)
     })
 
     Object.values(gameRef.current.players).forEach((player) => {
@@ -108,7 +113,7 @@ export const App = () => {
 
     socket.on('game_state', (data) => {
       const game = {
-        orbs: data.orbs,
+        orbs: D.map(data.orbs, (snapshot) => Orb.fromSnapshot(snapshot)),
         players: D.map(data.players, (snapshot) => Player.fromSnapshot(snapshot)),
         settings: data.settings,
       }
@@ -157,8 +162,9 @@ export const App = () => {
       }
 
       delete gameRef.current.orbs[data.consumedOrbId]
+      const instance = Orb.fromSnapshot(data.newOrb)
 
-      gameRef.current.orbs[data.newOrb.id] = data.newOrb
+      gameRef.current.orbs[instance.snapshot.id] = instance
     })
 
     socket.on('consume_player', (data) => {

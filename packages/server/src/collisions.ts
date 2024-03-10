@@ -30,9 +30,12 @@ export const checkForOrbCollisions = (
 
   for (const orb of listOfOrbs) {
     if (
-      isColliding({ location: player.snapshot.location, radius: player.radius(gameSettings) }, orb)
+      isColliding(
+        { location: player.snapshot.location, radius: player.radius(gameSettings) },
+        { location: orb.snapshot.location, radius: gameSettings.orbRadius },
+      )
     ) {
-      return orb.id
+      return orb.snapshot.id
     }
   }
 

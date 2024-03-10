@@ -90,12 +90,18 @@ const player = (context: CanvasRenderingContext2D, player: Player, gameSettings:
   context.restore()
 }
 
-const orb = (context: CanvasRenderingContext2D, orb: Orb) => {
+const orb = (context: CanvasRenderingContext2D, orb: Orb, gameSettings: GameSettings) => {
   context.save()
 
   context.beginPath()
-  context.arc(orb.location.x, orb.location.y, orb.radius, STARTING_ANGLE, ENDING_ANGLE)
-  context.fillStyle = orb.color
+  context.arc(
+    orb.snapshot.location.x,
+    orb.snapshot.location.y,
+    gameSettings.orbRadius,
+    STARTING_ANGLE,
+    ENDING_ANGLE,
+  )
+  context.fillStyle = orb.snapshot.color
   context.fill()
   context.closePath()
 

@@ -1,20 +1,38 @@
 import { faker } from '@faker-js/faker'
-import { Collideable } from './utils'
 import { GameSettings } from '.'
 
-export type Orb = {
+export type OrbSnapshot = {
   id: string
   color: string
-} & Collideable
+  location: {
+    x: number
+    y: number
+  }
+}
 
-export const createOrb = (gameSettings: GameSettings): Orb => {
-  return {
-    id: faker.string.uuid(),
-    location: {
-      x: faker.number.int({ min: 0, max: gameSettings.map.width }),
-      y: faker.number.int({ min: 0, max: gameSettings.map.height }),
-    },
-    radius: gameSettings.orbRadius,
-    color: faker.color.human(),
+export class Orb {
+  snapshot: OrbSnapshot
+
+  private constructor(snapshot: OrbSnapshot) {
+    this.snapshot = snapshot
+  }
+
+  static fromSnapshot(snapshot: OrbSnapshot): Orb {
+    return new Orb(snapshot)
+  }
+
+  static toSnapshot(orb: Orb): OrbSnapshot {
+    return orb.snapshot
+  }
+
+  static new(args: { gameSettings: GameSettings }): Orb {
+    return new Orb({
+      id: faker.string.uuid(),
+      location: {
+        x: faker.number.int({ min: 0, max: args.gameSettings.map.width }),
+        y: faker.number.int({ min: 0, max: args.gameSettings.map.height }),
+      },
+      color: faker.color.human(),
+    })
   }
 }

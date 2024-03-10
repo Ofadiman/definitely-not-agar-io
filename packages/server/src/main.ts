@@ -1,6 +1,6 @@
 import fastify from 'fastify'
 import fastifyIO from 'fastify-socket.io'
-import { Game, Orb, Player, createOrb, loop } from 'shared'
+import { Game, Orb, Player, loop } from 'shared'
 import { Server } from 'socket.io'
 import {
   GameSettings,
@@ -25,8 +25,8 @@ declare module 'fastify' {
 const createInitialOrbs = (gameSettings: GameSettings, orbsCount: number): Record<string, Orb> => {
   const orbs: Record<string, Orb> = {}
   for (let i = 0; i < orbsCount; i++) {
-    const orb = createOrb(gameSettings)
-    orbs[orb.id] = orb
+    const orb = Orb.new({ gameSettings })
+    orbs[orb.snapshot.id] = orb
   }
   return orbs
 }
@@ -100,11 +100,13 @@ server.ready().then(() => {
                 // TODO: Maybe instead of deleting orb from the game, just updates existing orb coordinates.
                 delete game.orbs[orbId]
 
-                const newOrb = createOrb(server.gameSettings)
+                const newOrb = Orb.new({ gameSettings: server.gameSettings })
 
-                game.orbs[newOrb.id] = newOrb
+                game.orbs[newOrb.snapshot.id] = newOrb
 
-                server.io.to('game').emit('consume_orb', { consumedOrbId: orbId, newOrb })
+                server.io
+                  .to('game')
+                  .emit('consume_orb', { consumedOrbId: orbId, newOrb: Orb.toSnapshot(newOrb) })
               }
 
               const consumedPlayerId = checkForPlayerCollisions(
@@ -173,7 +175,7 @@ server.ready().then(() => {
       })
 
       socket.emit('game_state', {
-        orbs: game.orbs,
+        orbs: D.map(game.orbs, Orb.toSnapshot),
         players: D.map(game.players, Player.toSnapshot),
         settings: game.settings,
       })
