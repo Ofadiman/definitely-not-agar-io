@@ -23,6 +23,7 @@ import { useForm, SubmitHandler } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { draw } from './draw'
 import { D } from '@mobily/ts-belt'
+import { Statistics } from './Statistics'
 
 declare global {
   interface Window {
@@ -35,6 +36,7 @@ const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io('http://lo
 })
 
 export const App = () => {
+  const [players, setPlayers] = useState<readonly Player[]>([])
   const [notification, setNotification] = useState<string | null>(null)
   const gameRef = useRef<Game | null>(null)
   const cancelGameLoopRef = useRef<Function | null>(null)
@@ -154,6 +156,7 @@ export const App = () => {
       }
 
       gameRef.current.players = D.map(players, Player.fromSnapshot)
+      setPlayers(D.values(gameRef.current.players))
     })
 
     socket.on('consume_orb', (data) => {
@@ -301,6 +304,15 @@ export const App = () => {
           </ul>
         </DialogActions>
       </Dialog>
+
+      {gameRef.current && (
+        <div
+          key={JSON.stringify(gameRef.current.players)}
+          style={{ position: 'absolute', right: 10, top: 10 }}
+        >
+          <Statistics players={players} />
+        </div>
+      )}
 
       {notification && (
         <Snackbar
