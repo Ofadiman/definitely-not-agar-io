@@ -126,29 +126,6 @@ server.ready().then(() => {
                   })
                 }
               }
-
-              const moveTo = botActions[player.snapshot.socketId]
-              if (!moveTo) {
-                return
-              }
-
-              const distX = moveTo.x - player.snapshot.location.x
-              const distY = moveTo.y - player.snapshot.location.y
-              const distance = Math.sqrt(distX * distX + distY * distY)
-              // If bot is close to its target location update its target location to ensure smooth movement.
-              if (distance <= 2) {
-                player.snapshot.location.x = moveTo.x
-                player.snapshot.location.y = moveTo.y
-                botActions[player.snapshot.socketId] = {
-                  x: faker.number.int({ min: 0, max: server.gameSettings.map.width }),
-                  y: faker.number.int({ min: 0, max: server.gameSettings.map.height }),
-                }
-              } else {
-                // TODO: Replace "1" with calculated player speed.
-                const factor = 1 / distance
-                player.snapshot.location.x = player.snapshot.location.x + factor * distX
-                player.snapshot.location.y = player.snapshot.location.y + factor * distY
-              }
             })
 
             server.io.to('game').emit('game_tick', D.map(game.players, Player.toSnapshot))
