@@ -88,15 +88,40 @@ server.ready().then(() => {
           fps: server.gameSettings.fps,
           callback: () => {
             Object.values(game.players).forEach((player) => {
-              const consumedOrbId = checkForOrbCollisions(player, game.orbs, server.gameSettings)
-              if (consumedOrbId !== null) {
-                delete game.orbs[consumedOrbId]
+              const radius = player.radius(server.gameSettings)
+
+              // TODO: Replace "1" with calculated player speed.
+              player.snapshot.location.x += 1 * player.snapshot.vector.x
+              if (player.snapshot.location.x - radius < 0 && player.snapshot.vector.x < 0) {
+                player.snapshot.location.x = 0 + radius
+              }
+              if (
+                player.snapshot.location.x + radius > server.gameSettings.map.width &&
+                player.snapshot.vector.x > 0
+              ) {
+                player.snapshot.location.x = server.gameSettings.map.width - radius
+              }
+
+              // TODO: Replace "1" with calculated player speed.
+              player.snapshot.location.y -= 1 * player.snapshot.vector.y
+              if (player.snapshot.location.y - radius < 0 && player.snapshot.vector.y > 0) {
+                player.snapshot.location.y = 0 + radius
+              } else if (
+                player.snapshot.location.y + radius > server.gameSettings.map.height &&
+                player.snapshot.vector.y < 0
+              ) {
+                player.snapshot.location.y = server.gameSettings.map.height - radius
+              }
+
+              const orbId = checkForOrbCollisions(player, game.orbs, server.gameSettings)
+              if (orbId) {
+                delete game.orbs[orbId]
 
                 const newOrb = createOrb(server.gameSettings)
 
                 game.orbs[newOrb.id] = newOrb
 
-                server.io.to('game').emit('consume_orb', { consumedOrbId, newOrb })
+                server.io.to('game').emit('consume_orb', { consumedOrbId: orbId, newOrb })
               }
 
               const consumedPlayerId = checkForPlayerCollisions(
@@ -107,16 +132,14 @@ server.ready().then(() => {
 
               if (consumedPlayerId) {
                 const consumedPlayer = game.players[consumedPlayerId]
-                if (!consumedPlayer) {
-                  return
+                if (consumedPlayer) {
+                  consumedPlayer.snapshot.state = 'dead'
+
+                  server.io.to('game').emit('consume_player', {
+                    consumedById: player.snapshot.socketId,
+                    consumedPlayerId,
+                  })
                 }
-
-                consumedPlayer.snapshot.state = 'dead'
-
-                server.io.to('game').emit('consume_player', {
-                  consumedById: player.snapshot.socketId,
-                  consumedPlayerId,
-                })
               }
 
               const moveTo = botActions[player.snapshot.socketId]
@@ -179,51 +202,6 @@ server.ready().then(() => {
 
       player.snapshot.vector.x = vector.x
       player.snapshot.vector.y = vector.y
-
-      const radius = player.radius(server.gameSettings)
-
-      // TODO: Replace "1" with calculated player speed.
-      player.snapshot.location.x += 1 * vector.x
-      if (player.snapshot.location.x - radius < 0 && player.snapshot.vector.x < 0) {
-        player.snapshot.location.x = 0 + radius
-      }
-      if (
-        player.snapshot.location.x + radius > server.gameSettings.map.width &&
-        player.snapshot.vector.x > 0
-      ) {
-        player.snapshot.location.x = server.gameSettings.map.width - radius
-      }
-
-      // TODO: Replace "1" with calculated player speed.
-      player.snapshot.location.y -= 1 * vector.y
-      if (player.snapshot.location.y - radius < 0 && player.snapshot.vector.y > 0) {
-        player.snapshot.location.y = 0 + radius
-      } else if (
-        player.snapshot.location.y + radius > server.gameSettings.map.height &&
-        vector.y < 0
-      ) {
-        player.snapshot.location.y = server.gameSettings.map.height - radius
-      }
-
-      const orbId = checkForOrbCollisions(player, game.orbs, server.gameSettings)
-      if (orbId) {
-        delete game.orbs[orbId]
-
-        const newOrb = createOrb(server.gameSettings)
-
-        game.orbs[newOrb.id] = newOrb
-
-        server.io.to('game').emit('consume_orb', { consumedOrbId: orbId, newOrb })
-      }
-
-      const consumedPlayerId = checkForPlayerCollisions(player, game.players, server.gameSettings)
-      if (consumedPlayerId) {
-        delete game.players[consumedPlayerId]
-
-        server.io
-          .to('game')
-          .emit('consume_player', { consumedById: player.snapshot.socketId, consumedPlayerId })
-      }
     })
 
     socket.on('disconnect', () => {
