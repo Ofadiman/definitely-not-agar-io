@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker'
-import { GameSettings } from '.'
+import { GameSettings, colors } from '.'
 
 export type OrbSnapshot = {
   id: string
@@ -32,7 +32,7 @@ export class Orb {
         x: faker.number.int({ min: 0, max: args.gameSettings.map.width }),
         y: faker.number.int({ min: 0, max: args.gameSettings.map.height }),
       },
-      color: faker.color.human(),
+      color: faker.helpers.arrayElement(colors),
     })
   }
 

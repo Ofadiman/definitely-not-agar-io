@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker'
-import { GameSettings } from '.'
+import { GameSettings, colors } from '.'
 
 export type PlayerSnapshot = {
   id: string
@@ -50,7 +50,7 @@ export class Player {
       id: faker.string.uuid(),
       type: args.type,
       state: 'alive',
-      color: faker.color.human(),
+      color: faker.helpers.arrayElement(colors),
       border: border,
       location: {
         x: faker.number.int({
