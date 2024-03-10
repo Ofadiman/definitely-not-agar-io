@@ -36,6 +36,7 @@ const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io('http://lo
 })
 
 export const App = () => {
+  const [winner, setWinner] = useState<Player | null>(null)
   const [players, setPlayers] = useState<readonly Player[]>([])
   const [notification, setNotification] = useState<string | null>(null)
   const gameRef = useRef<Game | null>(null)
@@ -184,6 +185,22 @@ export const App = () => {
       }
     })
 
+    socket.on('draw_winner', (data) => {
+      if (!gameRef.current) {
+        return
+      }
+
+      const winner = gameRef.current.players[data.winnerId]
+      if (!winner) {
+        return
+      }
+
+      if (cancelGameLoopRef.current) {
+        cancelGameLoopRef.current()
+      }
+      setWinner(winner)
+    })
+
     return () => {
       socket.disconnect()
 
@@ -256,6 +273,15 @@ export const App = () => {
         width={window.innerWidth}
         height={window.innerHeight}
       ></canvas>
+
+      <Dialog open={winner !== null}>
+        <DialogTitle>Game Over</DialogTitle>
+        <DialogContent>
+          {winner?.snapshot.socketId === socket.id
+            ? 'You won!'
+            : `Player ${winner?.snapshot.username} won!`}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isUsernameModalOpen}>
         <DialogTitle>Definitely not agar.io</DialogTitle>

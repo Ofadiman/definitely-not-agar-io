@@ -6,4 +6,5 @@ export type GameSettings = {
     height: number
   }
   orbRadius: number
+  winCondition: number
 }

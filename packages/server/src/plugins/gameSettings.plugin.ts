@@ -17,6 +17,7 @@ export const gameSettingsPlugin = fp(function (fastify, _opts, done) {
     },
     orbRadius: fastify.env.ORB_RADIUS,
     initialPlayerRadius: fastify.env.INITIAL_PLAYER_RADIUS,
+    winCondition: fastify.env.WIN_CONDITION,
   }
 
   fastify.decorate('gameSettings', gameSettings)

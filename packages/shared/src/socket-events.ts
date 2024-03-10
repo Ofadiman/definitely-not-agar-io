@@ -11,6 +11,7 @@ export type ServerToClientEvents = {
   game_tick: (data: Record<string, PlayerSnapshot>) => void
   consume_orb: (data: OrbSnapshot) => void
   consume_player: (data: { consumedPlayerId: string; consumedById: string }) => void
+  draw_winner: (data: { winnerId: string }) => void
 }
 
 export type ClientToServerEvents = {

@@ -13,6 +13,7 @@ const envSchema = z
     NUMBER_OF_BOTS: z.coerce.number().int().gte(0).lte(100).default(10),
     NUMBER_OF_ORBS: z.coerce.number().int().gte(100).lte(5000).default(1000),
     ORB_RADIUS: z.coerce.number().int().gte(1).lte(10).default(5),
+    WIN_CONDITION: z.coerce.number().int().gte(100).lte(2000).default(200),
   })
   .strip()
 
